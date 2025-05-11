@@ -10,6 +10,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarProvider,
 } from "@/components/ui/sidebar";
 import { Home, FileText, PenTool, BarChart3, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -59,54 +60,56 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar className="hidden md:flex">
-        <SidebarContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <a href="/dashboard">
-                  <Home className="h-5 w-5" />
-                  <span>Dashboard</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <a href="/dashboard/sop">
-                  <FileText className="h-5 w-5" />
-                  <span>SOP</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <a href="/dashboard/test">
-                  <PenTool className="h-5 w-5" />
-                  <span>Tes Online</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <a href="/dashboard/results">
-                  <BarChart3 className="h-5 w-5" />
-                  <span>Hasil</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarContent>
-        <div className="mt-auto p-4">
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={handleSignOut}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
-        </div>
-      </Sidebar>
+      <SidebarProvider>
+        <Sidebar className="hidden md:flex">
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a href="/dashboard">
+                    <Home className="h-5 w-5" />
+                    <span>Dashboard</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a href="/dashboard/sop">
+                    <FileText className="h-5 w-5" />
+                    <span>SOP</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a href="/dashboard/test">
+                    <PenTool className="h-5 w-5" />
+                    <span>Tes Online</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a href="/dashboard/results">
+                    <BarChart3 className="h-5 w-5" />
+                    <span>Hasil</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+          <div className="mt-auto p-4">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={handleSignOut}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
+        </Sidebar>
+      </SidebarProvider>
       <div className="flex-1 overflow-auto">
         <div className="container mx-auto p-4 md:p-6">{children}</div>
       </div>

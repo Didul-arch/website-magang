@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Menu, X } from "lucide-react";
+import { AuthContext } from "@/lib/utils/supabase/provider";
 
 export default function Header() {
   // const { user } = useAuth()
+  const { user, loading } = useContext(AuthContext);
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -56,7 +58,7 @@ export default function Header() {
             >
               Beranda
             </Link>
-            {/* {user && (
+            {user && (
               <Link
                 href={getDashboardLink()}
                 className={`text-sm font-medium transition-colors hover:text-primary ${
@@ -67,11 +69,11 @@ export default function Header() {
               >
                 Dashboard
               </Link>
-            )} */}
+            )}
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          {/* <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4">
             {user ? (
               <Link href={getDashboardLink()}>
                 <Button variant="outline" size="sm">
@@ -90,7 +92,7 @@ export default function Header() {
                 </Link>
               </>
             )}
-          </div> */}
+          </div>
           <ModeToggle />
           <button
             className="flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground md:hidden"
@@ -117,7 +119,7 @@ export default function Header() {
             >
               Beranda
             </Link>
-            {/* {user && (
+            {user && (
               <Link
                 href={getDashboardLink()}
                 className={`text-sm font-medium transition-colors hover:text-primary ${
@@ -131,7 +133,10 @@ export default function Header() {
               </Link>
             )}
             {user ? (
-              <Link href={getDashboardLink()} onClick={() => setIsMenuOpen(false)}>
+              <Link
+                href={getDashboardLink()}
+                onClick={() => setIsMenuOpen(false)}
+              >
                 <Button variant="outline" size="sm" className="w-full">
                   Dashboard
                 </Button>
@@ -149,7 +154,7 @@ export default function Header() {
                   </Button>
                 </Link>
               </div>
-            )} */}
+            )}
           </div>
         </div>
       )}

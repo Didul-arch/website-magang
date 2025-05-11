@@ -1,11 +1,12 @@
 import type React from "react";
 import { Inter } from "next/font/google";
 import { ToastContainer } from "react-toastify";
+
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import "./globals.css";
+import { AuthContextProvider } from "@/lib/utils/supabase/provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,11 +30,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
+          <AuthContextProvider>
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+          </AuthContextProvider>
         </ThemeProvider>
         <ToastContainer />
       </body>
