@@ -1,44 +1,45 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { ModeToggle } from "@/components/mode-toggle"
-import { useAuth } from "@/lib/firebase/auth-provider"
-import { Menu, X } from "lucide-react"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/mode-toggle";
+import { Menu, X } from "lucide-react";
 
 export default function Header() {
-  const { user } = useAuth()
-  const pathname = usePathname()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
+  // const { user } = useAuth()
+  const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
+      setIsScrolled(window.scrollY > 10);
+    };
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const isActive = (path: string) => {
-    return pathname === path
-  }
+    return pathname === path;
+  };
 
   const getDashboardLink = () => {
     // This is a simplified check. In a real app, you'd check user claims
     if (pathname.startsWith("/admin")) {
-      return "/admin"
+      return "/admin";
     }
-    return "/dashboard"
-  }
+    return "/dashboard";
+  };
 
   return (
     <header
       className={`sticky top-0 z-50 w-full transition-all ${
-        isScrolled ? "bg-background/80 backdrop-blur-sm shadow-sm" : "bg-background"
+        isScrolled
+          ? "bg-background/80 backdrop-blur-sm shadow-sm"
+          : "bg-background"
       }`}
     >
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -55,7 +56,7 @@ export default function Header() {
             >
               Beranda
             </Link>
-            {user && (
+            {/* {user && (
               <Link
                 href={getDashboardLink()}
                 className={`text-sm font-medium transition-colors hover:text-primary ${
@@ -66,11 +67,11 @@ export default function Header() {
               >
                 Dashboard
               </Link>
-            )}
+            )} */}
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-4">
+          {/* <div className="hidden md:flex items-center gap-4">
             {user ? (
               <Link href={getDashboardLink()}>
                 <Button variant="outline" size="sm">
@@ -89,14 +90,18 @@ export default function Header() {
                 </Link>
               </>
             )}
-          </div>
+          </div> */}
           <ModeToggle />
           <button
             className="flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground md:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             <span className="sr-only">Toggle menu</span>
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </button>
         </div>
       </div>
@@ -112,7 +117,7 @@ export default function Header() {
             >
               Beranda
             </Link>
-            {user && (
+            {/* {user && (
               <Link
                 href={getDashboardLink()}
                 className={`text-sm font-medium transition-colors hover:text-primary ${
@@ -144,10 +149,10 @@ export default function Header() {
                   </Button>
                 </Link>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       )}
     </header>
-  )
+  );
 }
