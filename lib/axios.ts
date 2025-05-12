@@ -1,4 +1,5 @@
 import axios from "axios";
+import { createClient } from "./utils/supabase/client";
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -8,9 +9,12 @@ const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.request.use(
-  (config) => {
-    // Do something before request is sent
-    const token = localStorage.getItem("token");
+  async (config) => {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

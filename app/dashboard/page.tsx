@@ -29,35 +29,6 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
 
-  // useEffect(() => {
-  //   const fetchUserData = async () => {
-  //     if (!user) return
-
-  //     try {
-  //       const userDocRef = doc(db, "users", user.uid)
-  //       const userDoc = await getDoc(userDocRef)
-
-  //       if (userDoc.exists()) {
-  //         const data = userDoc.data()
-  //         setUserData(data)
-  //         setProgress(
-  //           data.progress || {
-  //             registration: true,
-  //             readSOP: false,
-  //             completedTest: false,
-  //           },
-  //         )
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching user data:", error)
-  //     } finally {
-  //       setLoading(false)
-  //     }
-  //   }
-
-  //   fetchUserData()
-  // }, [user])
-
   const calculateProgressPercentage = () => {
     const steps = Object.values(progress);
     const completedSteps = steps.filter(Boolean).length;
