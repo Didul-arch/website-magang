@@ -1,289 +1,142 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import SopModal from "@/components/sop-modal"; // Pastikan komponen ini ada
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { PlayCircle, CheckCircle, ArrowRight, Loader2, AlertTriangle } from "lucide-react";
+import axiosInstance from "@/lib/axios";
 
-interface Option {
-  id: string;
-  text: string;
-  weight: number;
-}
-
-interface Question {
-  id: string;
-  text: string;
-  options: Option[];
+interface TestStatus {
+  hasCompletedTest: boolean;
 }
 
 export default function TestPage() {
-  // const { user } = useAuth()
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasCompletedTest, setHasCompletedTest] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const [isSopModalOpen, setIsSopModalOpen] = useState(false);
   const router = useRouter();
+  const [testStatus, setTestStatus] = useState<TestStatus | null>(null);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
+  const [errorStatus, setErrorStatus] = useState<string | null>(null);
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     if (!user) return
-
-  //     try {
-  //       // Check if user has already completed the test
-  //       const userDocRef = doc(db, "users", user.uid)
-  //       const userDoc = await getDoc(userDocRef)
-
-  //       if (userDoc.exists()) {
-  //         const userData = userDoc.data()
-  //         if (userData.progress?.completedTest) {
-  //           setHasCompletedTest(true)
-  //           setIsLoading(false)
-  //           return
-  //         }
-  //       }
-
-  //       // Fetch questions
-  //       const questionsCollection = collection(db, "questions")
-  //       const questionsSnapshot = await getDocs(questionsCollection)
-
-  //       const fetchedQuestions: Question[] = []
-  //       questionsSnapshot.forEach((doc) => {
-  //         const data = doc.data() as Omit<Question, "id">
-  //         fetchedQuestions.push({
-  //           id: doc.id,
-  //           ...data,
-  //         })
-  //       })
-
-  //       setQuestions(fetchedQuestions)
-  //     } catch (error) {
-  //       console.error("Error fetching data:", error)
-  //       toast({
-  //         variant: "destructive",
-  //         title: "Terjadi kesalahan",
-  //         description: "Gagal memuat soal tes. Silakan coba lagi nanti.",
-  //       })
-  //     } finally {
-  //       setIsLoading(false)
-  //     }
-  //   }
-
-  //   fetchData()
-  // }, [user, toast])
-
-  const handleAnswerChange = (questionId: string, optionId: string) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: optionId,
-    }));
-  };
-
-  const calculateScore = () => {
-    let totalScore = 0;
-    let maxPossibleScore = 0;
-
-    questions.forEach((question) => {
-      const selectedOptionId = answers[question.id];
-      const selectedOption = question.options.find(
-        (option) => option.id === selectedOptionId
-      );
-
-      // Add the weight of the selected option to the total score
-      if (selectedOption) {
-        totalScore += selectedOption.weight;
+  useEffect(() => {
+    const fetchTestStatus = async () => {
+      try {
+        setIsLoadingStatus(true);
+        setErrorStatus(null);
+        const response = await axiosInstance.get<TestStatus>("/api/test-status");
+        setTestStatus(response.data);
+      } catch (err: any) {
+        console.error("Failed to fetch test status:", err);
+        setErrorStatus(err.response?.data?.message || "Gagal memuat status tes.");
+      } finally {
+        setIsLoadingStatus(false);
       }
+    };
+    fetchTestStatus();
+  }, []);
 
-      // Calculate max possible score by finding the highest weight option for each question
-      const maxWeight = Math.max(
-        ...question.options.map((option) => option.weight)
-      );
-      maxPossibleScore += maxWeight;
-    });
-
-    // Convert to percentage
-    const percentageScore =
-      maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0;
-    return Math.round(percentageScore);
+  const handleOpenSopModal = () => setIsSopModalOpen(true);
+  const handleCloseSopModal = () => setIsSopModalOpen(false);
+  const handleAgreeSop = () => {
+    setIsSopModalOpen(false);
+    // Di sini idealnya Anda akan mengarahkan ke halaman pengerjaan tes yang sebenarnya
+    // Untuk contoh ini, kita anggap /dashboard/test/start adalah halaman pengerjaan
+    // router.push("/dashboard/test/start"); 
+    alert("Navigasi ke halaman pengerjaan tes (belum diimplementasikan).");
   };
 
-  // const handleSubmit = async () => {
-  //   if (!user) return
-
-  //   // Check if all questions are answered
-  //   const unansweredQuestions = questions.filter((q) => !answers[q.id])
-  //   if (unansweredQuestions.length > 0) {
-  //     toast({
-  //       variant: "destructive",
-  //       title: "Jawaban tidak lengkap",
-  //       description: `Anda belum menjawab ${unansweredQuestions.length} pertanyaan. Silakan lengkapi semua jawaban.`,
-  //     })
-  //     return
-  //   }
-
-  //   try {
-  //     setIsSubmitting(true)
-
-  //     // Calculate score
-  //     const score = calculateScore()
-  //     const isPassed = score >= 70 // Threshold for passing
-
-  //     // Save test results to Firestore
-  //     const userDocRef = doc(db, "users", user.uid)
-
-  //     await updateDoc(userDocRef, {
-  //       "progress.completedTest": true,
-  //       testResult: {
-  //         score,
-  //         isPassed,
-  //         answers,
-  //         completedAt: new Date().toISOString(),
-  //       },
-  //     })
-
-  //     toast({
-  //       title: "Tes berhasil diselesaikan",
-  //       description: "Jawaban Anda telah disimpan. Silakan lihat hasil tes.",
-  //     })
-
-  //     router.push("/dashboard/results")
-  //   } catch (error) {
-  //     console.error("Error submitting test:", error)
-  //     toast({
-  //       variant: "destructive",
-  //       title: "Terjadi kesalahan",
-  //       description: "Gagal menyimpan jawaban. Silakan coba lagi.",
-  //     })
-  //   } finally {
-  //     setIsSubmitting(false)
-  //   }
-  // }
-
-  if (isLoading) {
+  if (isLoadingStatus) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      <div className="flex flex-col items-center justify-center h-full space-y-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground">Memeriksa status tes Anda...</p>
       </div>
     );
   }
 
-  if (hasCompletedTest) {
+  if (errorStatus) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Tes Online</h1>
-          <p className="text-muted-foreground">
-            Tes seleksi program magang PT Mada Wikri Tunggal
+      <Card className="max-w-lg mx-auto">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle /> Terjadi Kesalahan
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-destructive-foreground">{errorStatus}</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Silakan coba muat ulang halaman atau hubungi administrator jika masalah berlanjut.
           </p>
-        </div>
+        </CardContent>
+        <CardFooter>
+            <Button onClick={() => window.location.reload()}>Coba Lagi</Button>
+        </CardFooter>
+      </Card>
+    );
+  }
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Tes Telah Diselesaikan</CardTitle>
-            <CardDescription>
-              Anda telah menyelesaikan tes seleksi online
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>
-              Anda telah menyelesaikan tes seleksi online program magang PT Mada
-              Wikri Tunggal.
-            </p>
-            <p className="mt-2">
-              Silakan lihat hasil tes Anda di halaman Hasil.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={() => router.push("/dashboard/results")}>
-              Lihat Hasil
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
+  if (testStatus?.hasCompletedTest) {
+    return (
+      <Card className="max-w-lg mx-auto text-center shadow-lg">
+        <CardHeader>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mb-4">
+            <CheckCircle className="h-10 w-10 text-green-600" />
+          </div>
+          <CardTitle className="text-2xl">Tes Telah Diselesaikan</CardTitle>
+          <CardDescription>
+            Anda sudah mengerjakan tes seleksi online.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            Hasil tes akan diumumkan sesuai jadwal. Silakan periksa halaman "Hasil Tes" secara berkala.
+          </p>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <Button onClick={() => router.push("/dashboard/results")} variant="outline">
+            Lihat Halaman Hasil Tes
+          </Button>
+        </CardFooter>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Tes Online</h1>
-        <p className="text-muted-foreground">
-          Tes seleksi program magang PT Mada Wikri Tunggal
-        </p>
-      </div>
-
-      <Card>
+    <>
+      <Card className="max-w-lg mx-auto shadow-lg">
         <CardHeader>
-          <CardTitle>Petunjuk Pengerjaan</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <PlayCircle className="h-7 w-7 text-primary" />
+            Tes Seleksi Online
+          </CardTitle>
           <CardDescription>
-            Baca petunjuk berikut sebelum mengerjakan tes
+            Kerjakan soal seleksi online. Pastikan Anda telah membaca dan memahami SOP pengerjaan tes.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ul className="list-disc pl-5 space-y-2">
-            <li>Tes terdiri dari {questions.length} soal pilihan ganda.</li>
-            <li>Setiap soal memiliki bobot penilaian yang berbeda.</li>
-            <li>Jawablah semua pertanyaan dengan teliti.</li>
-            <li>
-              Tidak ada batasan waktu, namun disarankan untuk menyelesaikan
-              dalam satu sesi.
-            </li>
-            <li>
-              Setelah mengirimkan jawaban, Anda tidak dapat mengubahnya kembali.
-            </li>
+          <p className="text-muted-foreground mb-4">
+            Tes ini bertujuan untuk mengukur kemampuan Anda. Harap kerjakan dengan jujur dan mandiri.
+          </p>
+          <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+            <li>Waktu pengerjaan tes terbatas.</li>
+            <li>Pastikan koneksi internet Anda stabil.</li>
+            <li>Dilarang membuka tab lain atau meminta bantuan selama tes.</li>
           </ul>
         </CardContent>
+        <CardFooter className="flex justify-end">
+          <Button size="lg" onClick={handleOpenSopModal} className="gap-1.5">
+            Mulai Tes Sekarang
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </CardFooter>
       </Card>
 
-      {questions.map((question, index) => (
-        <Card key={question.id}>
-          <CardHeader>
-            <CardTitle>Soal {index + 1}</CardTitle>
-            <CardDescription>{question.text}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RadioGroup
-              value={answers[question.id]}
-              onValueChange={(value) => handleAnswerChange(question.id, value)}
-            >
-              {question.options.map((option) => (
-                <div key={option.id} className="flex items-center space-x-2">
-                  <RadioGroupItem
-                    value={option.id}
-                    id={`${question.id}-${option.id}`}
-                  />
-                  <Label htmlFor={`${question.id}-${option.id}`}>
-                    {option.text}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </CardContent>
-        </Card>
-      ))}
-
-      <Card>
-        <CardContent className="pt-6">
-          {/* <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
-            {isSubmitting ? "Mengirim Jawaban..." : "Kirim Jawaban"}
-          </Button> */}
-          <p className="mt-2 text-sm text-muted-foreground text-center">
-            Pastikan semua jawaban telah terisi sebelum mengirim
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+      <SopModal
+        isOpen={isSopModalOpen}
+        onClose={handleCloseSopModal}
+        onAgree={handleAgreeSop}
+      />
+    </>
   );
 }

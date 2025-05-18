@@ -1,178 +1,111 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, Circle, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import React, { useContext } from 'react';
+import { AuthContext } from '@/lib/utils/supabase/provider';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { FileText, CheckCircle, ArrowRight, UserCircle, Loader2 } from "lucide-react";
 
-interface UserProgress {
-  registration: boolean;
-  readSOP: boolean;
-  completedTest: boolean;
-}
+export default function DashboardWelcomePage() {
 
-export default function Dashboard() {
-  // const { user } = useAuth()
-  const [userData, setUserData] = useState<any>(null);
-  const [progress, setProgress] = useState<UserProgress>({
-    registration: false,
-    readSOP: false,
-    completedTest: false,
-  });
-  const [loading, setLoading] = useState(true);
+  const { user, loading } = useContext(AuthContext);
+  const router = useRouter();
+  
+  // window.location.reload();
 
-  const calculateProgressPercentage = () => {
-    const steps = Object.values(progress);
-    const completedSteps = steps.filter(Boolean).length;
-    return (completedSteps / steps.length) * 100;
-  };
-
-  const getNextStep = () => {
-    if (!progress.readSOP) {
-      return {
-        title: "Baca SOP",
-        description: "Baca dan pahami SOP program magang",
-        link: "/dashboard/sop",
-      };
-    }
-    if (!progress.completedTest) {
-      return {
-        title: "Tes Online",
-        description: "Kerjakan tes seleksi online",
-        link: "/dashboard/test",
-      };
-    }
-    return {
-      title: "Lihat Hasil",
-      description: "Lihat hasil tes dan status seleksi Anda",
-      link: "/dashboard/results",
-    };
-  };
+  // console.log("tes1")
+  // console.log(user)
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-10rem)] space-y-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground">Memuat sesi Anda...</p>
       </div>
     );
   }
 
-  const nextStep = getNextStep();
+  // console.log("tes2")
+  // console.log(user)
+
+  if (!user) {
+    return (
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-10rem)] text-center">
+            <UserCircle className="h-16 w-16 text-destructive mb-4" />
+            <h2 className="text-xl font-semibold">Sesi Tidak Ditemukan</h2>
+            <p className="text-muted-foreground mb-4">
+                Anda tidak sedang login. Silakan login untuk mengakses dashboard.
+            </p>
+            <Button onClick={() => router.push('/login')}>Ke Halaman Login</Button>
+        </div>
+    );
+  }
+
+  const userName = user.user_metadata?.full_name || user.email ||  "Tamu"; 
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Selamat datang, {userData?.fullName || "Peserta"}! Pantau progres
-          pendaftaran magang Anda.
-        </p>
+    <div className="space-y-8 py-6">
+      <Card className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-xl border-none">
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold">
+            Selamat Datang, {userName}!
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>
+            Gunakan navigasi di samping untuk mengakses halaman tes atau melihat hasil Anda nanti.
+            Pastikan Anda selalu memantau informasi terbaru terkait proses seleksi.
+          </p>
+        </CardContent>
+      </Card>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-6 w-6 text-blue-600" />
+              Tes Online
+            </CardTitle>
+            <CardDescription>
+              Akses halaman untuk mengerjakan tes seleksi online.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button onClick={() => router.push("/dashboard/test")} className="w-full">
+              Kerjakan Tes <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+              Hasil Tes
+            </CardTitle>
+            <CardDescription>
+              Lihat hasil tes Anda setelah periode penilaian selesai.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button onClick={() => router.push("/dashboard/results")} className="w-full" variant="outline">
+              Lihat Hasil <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Progres Pendaftaran</CardTitle>
-          <CardDescription>
-            Selesaikan semua tahapan untuk menyelesaikan proses pendaftaran
-          </CardDescription>
+          <CardTitle>Informasi Penting</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div>
-              <Progress value={calculateProgressPercentage()} className="h-2" />
-              <p className="mt-2 text-sm text-muted-foreground">
-                {Math.round(calculateProgressPercentage())}% selesai
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center">
-                {progress.registration ? (
-                  <CheckCircle className="mr-2 h-5 w-5 text-primary" />
-                ) : (
-                  <Circle className="mr-2 h-5 w-5 text-muted-foreground" />
-                )}
-                <div>
-                  <p
-                    className={
-                      progress.registration
-                        ? "font-medium"
-                        : "text-muted-foreground"
-                    }
-                  >
-                    Registrasi
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center">
-                {progress.readSOP ? (
-                  <CheckCircle className="mr-2 h-5 w-5 text-primary" />
-                ) : (
-                  <Circle className="mr-2 h-5 w-5 text-muted-foreground" />
-                )}
-                <div>
-                  <p
-                    className={
-                      progress.readSOP ? "font-medium" : "text-muted-foreground"
-                    }
-                  >
-                    Baca SOP
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center">
-                {progress.completedTest ? (
-                  <CheckCircle className="mr-2 h-5 w-5 text-primary" />
-                ) : (
-                  <Circle className="mr-2 h-5 w-5 text-muted-foreground" />
-                )}
-                <div>
-                  <p
-                    className={
-                      progress.completedTest
-                        ? "font-medium"
-                        : "text-muted-foreground"
-                    }
-                  >
-                    Tes Online
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Langkah Selanjutnya</CardTitle>
-          <CardDescription>Lanjutkan proses pendaftaran Anda</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-medium">{nextStep.title}</h3>
-              <p className="text-sm text-muted-foreground">
-                {nextStep.description}
-              </p>
-            </div>
-            <Link href={nextStep.link}>
-              <Button className="w-full sm:w-auto">
-                Lanjutkan
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
+          <p className="text-muted-foreground">
+            Pengumuman kelulusan akan dilakukan setelah periode pendaftaran dan seleksi berakhir.
+            Harap periksa email Anda secara berkala dan halaman "Hasil Tes" untuk pembaruan.
+            Semoga berhasil!
+          </p>
         </CardContent>
       </Card>
     </div>
