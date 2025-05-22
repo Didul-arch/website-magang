@@ -1,44 +1,47 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { ModeToggle } from "@/components/mode-toggle"
-import { useAuth } from "@/lib/firebase/auth-provider"
-import { Menu, X } from "lucide-react"
+import { useState, useEffect, useContext } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/mode-toggle";
+import { Menu, X } from "lucide-react";
+import { AuthContext } from "@/lib/utils/supabase/provider";
 
 export default function Header() {
-  const { user } = useAuth()
-  const pathname = usePathname()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
+  // const { user } = useAuth()
+  const { user, loading } = useContext(AuthContext);
+  const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
+      setIsScrolled(window.scrollY > 10);
+    };
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const isActive = (path: string) => {
-    return pathname === path
-  }
+    return pathname === path;
+  };
 
   const getDashboardLink = () => {
     // This is a simplified check. In a real app, you'd check user claims
     if (pathname.startsWith("/admin")) {
-      return "/admin"
+      return "/admin";
     }
-    return "/dashboard"
-  }
+    return "/dashboard";
+  };
 
   return (
     <header
       className={`sticky top-0 z-50 w-full transition-all ${
-        isScrolled ? "bg-background/80 backdrop-blur-sm shadow-sm" : "bg-background"
+        isScrolled
+          ? "bg-background/80 backdrop-blur-sm shadow-sm"
+          : "bg-background"
       }`}
     >
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -96,7 +99,11 @@ export default function Header() {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             <span className="sr-only">Toggle menu</span>
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </button>
         </div>
       </div>
@@ -126,7 +133,10 @@ export default function Header() {
               </Link>
             )}
             {user ? (
-              <Link href={getDashboardLink()} onClick={() => setIsMenuOpen(false)}>
+              <Link
+                href={getDashboardLink()}
+                onClick={() => setIsMenuOpen(false)}
+              >
                 <Button variant="outline" size="sm" className="w-full">
                   Dashboard
                 </Button>
@@ -149,5 +159,5 @@ export default function Header() {
         </div>
       )}
     </header>
-  )
+  );
 }

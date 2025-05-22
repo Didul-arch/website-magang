@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Website for internship application
+
+model User {
+  id            String      @id @default(cuid())
+  name          String
+  email         String?     @unique
+  phoneNumber   String?
+  role          String?     @default("USER")
+  createdAt     DateTime    @default(now()) @map(name: "created_at")
+  updatedAt     DateTime    @updatedAt @map(name: "updated_at")
+  internship    Internship?
+  notifications Notification[]
+  @@map(name: "users")
+}
+
+model Internship {
+  id            Int       @id @default(autoincrement())
+  company       String
+  degree        String
+  semester      Int
+  idCard        String
+  cv            String?
+  portfolio     String?
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
+  user          User?     @relation(fields: [userId], references: [id])
+  userId        String?   @unique
+  status        String    @default("PENDING")
+  applications  Application[]
+  @@map(name: "internships")
+}
+
+model Position {
+  id            Int       @id @default(autoincrement())
+  title         String
+  description   String
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
+  vacancy       Vacancy[]
+  @@map(name: "positions")
+}
+
+model Vacancy {
+  id            Int         @id @default(autoincrement())
+  title         String
+  description   String
+  thumbnail     String?
+  location      String
+  status        String      @default("OPEN")
+  startDate     DateTime    @map(name: "start_date")
+  endDate       DateTime    @map(name: "end_date")
+  createdAt     DateTime    @default(now()) @map(name: "created_at")
+  updatedAt     DateTime    @updatedAt @map(name: "updated_at")
+  position      Position?   @relation(fields: [positionId], references: [id])
+  positionId    Int?
+  applications  Application[]
+  questions     Question[]
+  @@map(name: "vacancies")
+}
+
+model Application {
+  id            Int         @id @default(autoincrement())
+  status        String      @default("PENDING")
+  cv            String?
+  portfolio     String?
+  createdAt     DateTime    @default(now()) @map(name: "created_at")
+  updatedAt     DateTime    @updatedAt @map(name: "updated_at")
+  internship    Internship? @relation(fields: [internshipId], references: [id])
+  internshipId  Int?
+  Vacancy       Vacancy?    @relation(fields: [vacancyId], references: [id])
+  vacancyId     Int?
+  ApplicantAnswer ApplicantAnswer[]
+  @@map(name: "applications")
+}
+
+model Question {
+  id            Int         @id @default(autoincrement())
+  question      String
+  answer        String
+  createdAt     DateTime    @default(now()) @map(name: "created_at")
+  updatedAt     DateTime    @updatedAt @map(name: "updated_at")
+  vacancy       Vacancy?    @relation(fields: [vacancyId], references: [id])
+  vacancyId     Int?
+  answers       Answer[]
+  applicantAnswer ApplicantAnswer[]
+  @@map(name: "questions")
+}
+
+model Answer {
+  id            Int         @id @default(autoincrement())
+  answer        String
+  isCorrect     Boolean     @default(false)
+  createdAt     DateTime    @default(now()) @map(name: "created_at")
+  updatedAt     DateTime    @updatedAt @map(name: "updated_at")
+  question      Question?   @relation(fields: [questionId], references: [id])
+  questionId    Int?
+  applicantAnswer ApplicantAnswer[]
+  @@map(name: "answers")
+}
+
+model ApplicantAnswer {
+  id            Int         @id @default(autoincrement())
+  createdAt     DateTime    @default(now()) @map(name: "created_at")
+  updatedAt     DateTime    @updatedAt @map(name: "updated_at")
+  application   Application? @relation(fields: [applicationId], references: [id])
+  applicationId Int?
+  question      Question?   @relation(fields: [questionId], references: [id])
+  questionId    Int?
+  answer        Answer?    @relation(fields: [answerId], references: [id])
+  answerId      Int?
+  @@map(name: "applicant_answers")
+}
+
+model Notification {
+  id            Int         @id @default(autoincrement())
+  title         String
+  message       String
+  createdAt     DateTime    @default(now()) @map(name: "created_at")
+  updatedAt     DateTime    @updatedAt @map(name: "updated_at")
+  user          User?       @relation(fields: [userId], references: [id])
+  userId        String?
+  @@map(name: "notifications")
+}
