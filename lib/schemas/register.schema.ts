@@ -17,6 +17,7 @@ const registerFormSchema = z
     confirmPassword: z
       .string()
       .min(6, { message: "Konfirmasi password minimal 6 karakter" }),
+    vacancyId: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Password dan konfirmasi password tidak sama",
