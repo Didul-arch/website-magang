@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,11 +40,38 @@ import { registerFormSchema } from "@/lib/schemas";
 import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 import { Msg } from "@/components/toastify";
+import { Loader2 } from "lucide-react";
+
+interface Position {
+  id: number;
+  name: string;
+  description: string;
+}
+
+interface Vacancy {
+  id: number;
+  title: string;
+  description: string;
+  thumbnail?: string | null;
+  location: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  position?: Position | null;
+}
+
+interface VacancyApiResponse {
+  message: string;
+  data: Vacancy[];
+}
 
 export default function RegisterPage() {
   const [idCardFile, setIdCardFile] = useState<File | null>(null);
   const [idCardBase64, setIdCardBase64] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
+  const [isFetchingVacancies, setIsFetchingVacancies] = useState(true);
+  const [fetchVacanciesError, setFetchVacanciesError] = useState<string | null>(null);
   const router = useRouter();
 
   const form = useForm<z.infer<typeof registerFormSchema>>({
@@ -55,11 +82,37 @@ export default function RegisterPage() {
       phoneNumber: "",
       university: "",
       major: "",
-      semester: 0,
+      semester: undefined,
       password: "",
       confirmPassword: "",
+      vacancyId: undefined,
     },
   });
+
+  useEffect(() => {
+    const fetchOpenVacancies = async () => {
+      setIsFetchingVacancies(true);
+      setFetchVacanciesError(null);
+      try {
+        const response = await axiosInstance.get<VacancyApiResponse>("api/vacancy");
+
+        if (response.data && response.data.data) {
+          setVacancies(response.data.data.filter(v => v.status === "OPEN"));
+        } else {
+          const errMsg = response.data?.message || "Gagal memuat lowongan";
+          setFetchVacanciesError(errMsg);
+        }
+      } catch (error: any) {
+        const errorMessage = error.response?.data?.message || error.message || "Terjadi kesalahan"
+        setFetchVacanciesError(errorMessage);
+        toast.error(Msg, { data: { title: "Error", description: errorMessage } });
+      } finally {
+        setIsFetchingVacancies(false);
+      }
+    };
+
+    fetchOpenVacancies();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -78,7 +131,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (values: z.infer<typeof registerFormSchema>) => {
     try {
-      setIsLoading(true);
+      setIsSubmitting(true);
 
       const response = await axiosInstance.post("/api/auth/register", {
         ...values,
@@ -106,7 +159,7 @@ export default function RegisterPage() {
         },
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -129,6 +182,52 @@ export default function RegisterPage() {
                   onSubmit={form.handleSubmit(onSubmit)}
                   className="space-y-4"
                 >
+                  {/* Field untuk memilih Vacancy */}
+                  <FormField
+                    control={form.control}
+                    name="vacancyId" // Pastikan nama ini sesuai dengan skema Zod
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Lowongan yang Diminati</FormLabel>
+                        <Select
+                          onValueChange={(value) => field.onChange(Number(value))} // Konversi ke number
+                          defaultValue={field.value?.toString()}
+                          disabled={isFetchingVacancies}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={isFetchingVacancies ? "Memuat lowongan..." : "Pilih lowongan"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {isFetchingVacancies ? (
+                              <div className="flex items-center justify-center p-4">
+                                <Loader2 className="h-5 w-5 animate-spin mr-2" /> Memuat...
+                              </div>
+                            ) : fetchVacanciesError ? (
+                              <div className="p-4 text-center text-sm text-destructive">
+                                {fetchVacanciesError}
+                              </div>
+                            ) : vacancies.length > 0 ? (
+                              vacancies.map((vacancy) => (
+                                <SelectItem
+                                  key={vacancy.id}
+                                  value={vacancy.id.toString()} // Value SelectItem harus string
+                                >
+                                  {vacancy.title} ({vacancy.position?.title || 'Posisi Umum'}) - {vacancy.location}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <div className="p-4 text-center text-sm text-muted-foreground">
+                                Tidak ada lowongan yang tersedia saat ini.
+                              </div>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="fullName"
@@ -283,8 +382,8 @@ export default function RegisterPage() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Mendaftar..." : "Daftar"}
+                  <Button type="submit" className="w-full" disabled={isSubmitting || isFetchingVacancies}>
+                    {isSubmitting ? "Mendaftar..." : "Daftar"}
                   </Button>
                 </form>
               </Form>

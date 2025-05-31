@@ -86,7 +86,21 @@ export async function POST(request: Request) {
  */
 export async function GET(request: Request) {
   try {
-    const vacancies = await prisma.vacancy.findMany();
+    const vacancies = await prisma.vacancy.findMany({
+      omit: {
+        positionId: true
+      },
+      include: {
+        position: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+          },
+        },
+      },
+    }
+    );
 
     return NextResponse.json(
       {

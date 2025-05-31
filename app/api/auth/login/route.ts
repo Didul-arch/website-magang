@@ -53,6 +53,7 @@ export async function POST(request: Request) {
           email,
           name: user_metadata.full_name,
         },
+        access_token: data.session.access_token,
       },
       {
         status: 200,
