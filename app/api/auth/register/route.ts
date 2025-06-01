@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
-import { registerFormSchema } from "@/lib/schemas";
+import { registerFormSchemaBackend } from "@/lib/schemas";
 import { createClient } from "@/lib/utils/supabase/server";
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const parsedBody = registerFormSchema.safeParse(body);
+  const formData = await request.formData();
+  const body: any = {};
+  formData.forEach((value, key) => {
+    body[key] = value;
+  });
+
+  const parsedBody = registerFormSchemaBackend.safeParse(body);
 
   if (!parsedBody.success) {
     return NextResponse.json(
@@ -22,6 +27,31 @@ export async function POST(request: Request) {
 
   const { email, password, phoneNumber, university, major, semester, idCard } =
     parsedBody.data;
+
+  let idCardUrl: string | null = null;
+  if (idCard) {
+    // add file to supabase storage bucket
+    const supabase = await createClient();
+    const { error } = await supabase.storage
+      .from("all")
+      .upload(`id-cards/${email}`, idCard);
+    if (error) {
+      return NextResponse.json(
+        {
+          message: "Error uploading ID card",
+          error: error.message,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from("all")
+      .getPublicUrl(`id-cards/${email}`);
+    idCardUrl = publicUrlData.publicUrl;
+  }
 
   const supabase = await createClient();
 
@@ -60,7 +90,7 @@ export async function POST(request: Request) {
             company: university,
             degree: major,
             semester: semester,
-            idCard: idCard!,
+            idCard: idCardUrl ?? "",
             createdAt: new Date(),
             updatedAt: new Date(),
           },
@@ -89,32 +119,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
-/**
- * model User {
-  id            String      @id @default(cuid())
-  name          String
-  email         String?     @unique
-  phoneNumber   String?
-  role          String?     @default("USER")
-  createdAt     DateTime    @default(now()) @map(name: "created_at")
-  updatedAt     DateTime    @updatedAt @map(name: "updated_at")
-  internship    Internship?
-  @@map(name: "users")
-}
-
-model Internship {
-  id            Int       @id @default(autoincrement())
-  company       String
-  degree        String
-  semester      Int
-  idCard        String
-  cv            String
-  portfolio     String
-  createdAt     DateTime  @default(now()) @map(name: "created_at")
-  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
-  user          User?     @relation(fields: [userId], references: [id])
-  userId        String?      @unique
-  @@map(name: "internships")
-}
- */

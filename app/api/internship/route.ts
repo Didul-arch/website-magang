@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
-import { vacancyFormSchema } from "@/lib/schemas";
+import { positionFormSchema } from "@/lib/schemas";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyAdmin } from "@/lib/utils/supabase/role_stuff_fuck_naming_things";
 
 /**
- * Insert a new job vacancy
- * @description This endpoint is used to open a new job vacancy.
+ * Insert a new internship
+ * @description This endpoint is used to create a new internship data.
  * @param request - The request object
  * @returns
  */
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   await verifyAdmin(request);
 
   const body = await request.json();
-  const parsedBody = vacancyFormSchema.safeParse(body);
+  const parsedBody = positionFormSchema.safeParse(body);
 
   if (!parsedBody.success) {
     return NextResponse.json(
@@ -29,38 +29,19 @@ export async function POST(request: Request) {
     );
   }
 
-  const {
-    title,
-    description,
-    location,
-    status,
-    startDate,
-    endDate,
-    thumbnail,
-    positionId,
-  } = parsedBody.data;
+  const { title, description } = parsedBody.data;
 
   try {
-    const response = await prisma.vacancy.create({
+    const response = await prisma.position.create({
       data: {
         title,
         description,
-        location,
-        status,
-        startDate,
-        endDate,
-        thumbnail,
-        position: {
-          connect: {
-            id: positionId,
-          },
-        },
       },
     });
 
     return NextResponse.json(
       {
-        message: "Vacancy created successfully",
+        message: "Position created successfully",
         data: response,
       },
       {
@@ -70,7 +51,7 @@ export async function POST(request: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        message: "Error creating vacancy",
+        message: "Error creating position",
         error,
       },
       {
@@ -81,30 +62,35 @@ export async function POST(request: Request) {
 }
 
 /**
- * Fetch all vacancies
+ * Fetch internship with pagination
  * @returns
  */
 export async function GET(request: Request) {
   try {
-    const vacancies = await prisma.vacancy.findMany({
-      omit: {
-        positionId: true,
-      },
-      include: {
-        position: {
-          select: {
-            id: true,
-            title: true,
-            description: true,
-          },
-        },
-      },
-    });
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
+
+    const skip = (page - 1) * limit;
+
+    const [internships, total] = await Promise.all([
+      prisma.internship.findMany({
+        skip,
+        take: limit,
+      }),
+      prisma.internship.count(),
+    ]);
 
     return NextResponse.json(
       {
-        message: "Vacancies fetched successfully",
-        data: vacancies,
+        message: "Internships fetched successfully",
+        data: internships,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
       },
       {
         status: 200,
@@ -113,7 +99,7 @@ export async function GET(request: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        message: "Error fetching vacancies",
+        message: "Error fetching positions",
         error,
       },
       {

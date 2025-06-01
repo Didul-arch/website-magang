@@ -14,13 +14,29 @@ export async function POST(request: Request) {
 
   if (response.error) {
     console.error("Error during sign in:", response.error.message);
+
+    // Check if the error is "Email not confirmed"
+    if (response.error.message?.toLowerCase()?.includes("email not confirmed")) {
+      // Resend confirmation email
+      await supabase.auth.resend({
+        type: "signup",
+        email,
+      });
+
+      return NextResponse.json(
+        {
+          message: "Tolong konfirmasi email anda. Email konfirmasi baru telah dikirim.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     return NextResponse.json(
       {
         message: "Error during sign in",
-        error:
-          response.error.message?.toLowerCase() === "email not confirmed"
-            ? "Tolong konfirmasi email anda"
-            : response.error.message,
+        error: response.error.message,
       },
       {
         status: 400,

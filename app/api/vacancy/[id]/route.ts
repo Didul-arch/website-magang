@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
-import { vacancyFormSchema } from "@/lib/schemas";
+import { vacancyFormSchema, updateVacancyFormSchema } from "@/lib/schemas";
 import { verifyAdmin } from "@/lib/utils/supabase/role_stuff_fuck_naming_things";
 
 /**
@@ -13,7 +13,7 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const { id } = params;
+  const { id } = await params;
 
   if (!id || isNaN(parseInt(id))) {
     return NextResponse.json(
@@ -30,6 +30,16 @@ export async function GET(
     const vacancy = await prisma.vacancy.findUnique({
       where: {
         id: parseInt(id),
+      },
+      omit: { positionId: true },
+      include: {
+        position: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+          },
+        },
       },
     });
 
@@ -77,7 +87,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   await verifyAdmin(request);
-  const { id } = params;
+  const { id } = await params;
 
   if (!id || isNaN(parseInt(id))) {
     return NextResponse.json(
@@ -91,7 +101,7 @@ export async function PUT(
   }
 
   const body = await request.json();
-  const parsedBody = vacancyFormSchema.safeParse(body);
+  const parsedBody = updateVacancyFormSchema.safeParse(body);
 
   if (!parsedBody.success) {
     return NextResponse.json(
@@ -105,35 +115,21 @@ export async function PUT(
     );
   }
 
-  const {
-    title,
-    description,
-    location,
-    status,
-    startDate,
-    endDate,
-    thumbnail,
-    positionId,
-  } = parsedBody.data;
-
   try {
+    const { positionId, ...vacancyData } = parsedBody.data;
     const vacancy = await prisma.vacancy.update({
       where: {
         id: parseInt(id),
       },
       data: {
-        title,
-        description,
-        location,
-        status,
-        startDate,
-        endDate,
-        thumbnail,
-        position: {
-          connect: {
-            id: positionId,
+        ...vacancyData,
+        ...(positionId && {
+          position: {
+            connect: {
+              id: positionId,
+            },
           },
-        },
+        }),
       },
     });
 
@@ -169,7 +165,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   await verifyAdmin(request);
-  const { id } = params;
+  const { id } = await params;
 
   if (!id || isNaN(parseInt(id))) {
     return NextResponse.json(
@@ -183,7 +179,7 @@ export async function DELETE(
   }
 
   try {
-    const vacancy = await prisma.vacancy.delete({
+    await prisma.vacancy.delete({
       where: {
         id: parseInt(id),
       },
@@ -192,7 +188,7 @@ export async function DELETE(
     return NextResponse.json(
       {
         message: "Vacancy deleted successfully",
-        data: vacancy,
+        data: null,
       },
       {
         status: 200,

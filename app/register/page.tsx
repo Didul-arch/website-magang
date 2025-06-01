@@ -67,7 +67,6 @@ interface VacancyApiResponse {
 
 export default function RegisterPage() {
   const [idCardFile, setIdCardFile] = useState<File | null>(null);
-  const [idCardBase64, setIdCardBase64] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [vacancies, setVacancies] = useState<Vacancy[]>([]);
   const [isFetchingVacancies, setIsFetchingVacancies] = useState(true);
@@ -118,25 +117,35 @@ export default function RegisterPage() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setIdCardFile(file);
-
-      // Convert file to base64
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setIdCardBase64(base64String);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
   const onSubmit = async (values: z.infer<typeof registerFormSchema>) => {
     try {
       setIsSubmitting(true);
+      let bodyFormData = new FormData();
 
-      const response = await axiosInstance.post("/api/auth/register", {
-        ...values,
-        idCard: idCardBase64,
-      });
+      bodyFormData.append("fullName", values.fullName);
+      bodyFormData.append("email", values.email);
+      bodyFormData.append("phoneNumber", values.phoneNumber);
+      bodyFormData.append("university", values.university);
+      bodyFormData.append("major", values.major);
+      bodyFormData.append("semester", values.semester?.toString() || "");
+      bodyFormData.append("password", values.password);
+      bodyFormData.append("confirmPassword", values.confirmPassword);
+      if (idCardFile) {
+        bodyFormData.append("idCard", idCardFile);
+      }
+
+      const response = await axiosInstance.post(
+        "/api/auth/register",
+        bodyFormData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       if (response.status !== 200) {
         throw new Error("Registration failed");
@@ -183,7 +192,7 @@ export default function RegisterPage() {
                   className="space-y-4"
                 >
                   {/* Field untuk memilih Vacancy */}
-                  <FormField
+                  {/* <FormField
                     control={form.control}
                     name="vacancyId" // Pastikan nama ini sesuai dengan skema Zod
                     render={({ field }) => (
@@ -227,7 +236,7 @@ export default function RegisterPage() {
                         <FormMessage />
                       </FormItem>
                     )}
-                  />
+                  /> */}
                   <FormField
                     control={form.control}
                     name="fullName"
