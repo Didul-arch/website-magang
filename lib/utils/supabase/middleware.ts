@@ -1,3 +1,6 @@
+"use server";
+
+import axiosInstance from "@/lib/axios";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -40,16 +43,16 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  const publicPaths = ["/", "/login", "/register"]; 
-  const isPublicPath = publicPaths.some(
-    (publicPathEntry) => {
-      if (publicPathEntry === "/") {
-        return pathname === publicPathEntry; // Cocokkan persis untuk "/"
-      }
-      // Untuk path lain, cocokkan jika pathname sama persis atau dimulai dengan path publik + "/"
-      return pathname === publicPathEntry || pathname.startsWith(publicPathEntry + "/");
+  const publicPaths = ["/", "/login", "/register"];
+  const isPublicPath = publicPaths.some((publicPathEntry) => {
+    if (publicPathEntry === "/") {
+      return pathname === publicPathEntry; // Cocokkan persis untuk "/"
     }
-  );
+    // Untuk path lain, cocokkan jika pathname sama persis atau dimulai dengan path publik + "/"
+    return (
+      pathname === publicPathEntry || pathname.startsWith(publicPathEntry + "/")
+    );
+  });
 
   console.log(
     `[Middleware] Path: ${pathname}, User: ${
@@ -73,8 +76,34 @@ export async function updateSession(request: NextRequest) {
       `[Middleware] User exists & trying to access login/register. Redirecting from ${pathname} to /dashboard`
     );
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard"; 
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  // Jika user ada dan mencoba akses path admin, pastikan user adalah ADMIN
+  if (user && pathname.startsWith("/admin")) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const response = await axiosInstance.get("/api/auth/me", {
+      headers: {
+        Authorization: `Bearer ${session?.access_token}`,
+      },
+    });
+
+    const data = response.data?.data;
+
+    if (!data || data.role !== "ADMIN") {
+      console.log(
+        `[Middleware] User is not admin. Redirecting from ${pathname} to /dashboard`
+      );
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
+
+    console.log(`[Middleware] User is admin. Allowing access to ${pathname}`);
   }
 
   return supabaseResponse;
