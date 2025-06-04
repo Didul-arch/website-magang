@@ -53,17 +53,32 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [page, setPage] = useState(1);
   const [maxPage, setMaxPage] = useState(1);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  // Debounce searchQuery
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   useEffect(() => {
     const fetchUsers = async () => {
       setIsLoading(true);
       try {
+        const params = new URLSearchParams({
+          limit: LIMIT.toString(),
+          page: page.toString(),
+        });
+        if (debouncedSearchQuery) {
+          params.append("search", debouncedSearchQuery);
+        }
         const response = await axiosInstance.get(
-          `/api/internship?limit=${LIMIT}&page=${page}`
+          `/api/internship?${params.toString()}`
         );
 
         const fetchedUsers: User[] = response.data.data.map((user: any) => ({
@@ -90,9 +105,7 @@ export default function AdminPage() {
         }));
 
         setUsers(fetchedUsers);
-        setFilteredUsers(fetchedUsers);
 
-        // Assume response.data.pagination.totalPages contains the total number of users
         const total = response.data?.pagination?.totalPages || 0;
         setMaxPage(total);
       } catch (error) {
@@ -108,7 +121,7 @@ export default function AdminPage() {
     };
 
     fetchUsers();
-  }, [toast, page]);
+  }, [toast, page, debouncedSearchQuery]);
 
   // Pagination handlers
   const handlePrevPage = () => {
@@ -132,15 +145,28 @@ export default function AdminPage() {
         <CardHeader>
           <CardTitle>Daftar Peserta</CardTitle>
           <CardDescription>
-            Total {filteredUsers.length} peserta terdaftar
+            Total {users.length} peserta terdaftar
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Search Input */}
+          <div className="mb-4 flex items-center gap-2">
+            <Input
+              placeholder="Cari nama, email, universitas, atau jurusan..."
+              value={searchQuery}
+              onChange={(e) => {
+                setPage(1);
+                setSearchQuery(e.target.value);
+              }}
+              className="max-w-xs"
+            />
+            <Search className="h-4 w-4 text-muted-foreground" />
+          </div>
           {isLoading ? (
             <div className="flex h-40 items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
             </div>
-          ) : filteredUsers.length === 0 ? (
+          ) : users.length === 0 ? (
             <div className="flex h-40 flex-col items-center justify-center space-y-2 text-center">
               <UserX className="h-10 w-10 text-muted-foreground" />
               <p className="text-muted-foreground">
@@ -161,7 +187,7 @@ export default function AdminPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredUsers.map((user) => (
+                    {users.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">
                           {user.user?.name}

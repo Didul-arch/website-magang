@@ -62,7 +62,7 @@ export async function POST(request: Request) {
 }
 
 /**
- * Fetch internship with pagination
+ * Fetch internship with pagination and optional search query
  * @returns
  */
 export async function GET(request: Request) {
@@ -70,18 +70,33 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const searchQuery = searchParams.get("search")?.trim() || "";
 
     const skip = (page - 1) * limit;
+
+    const where = searchQuery
+      ? {
+          user: {
+            is: {
+              name: {
+                contains: searchQuery,
+                mode: "insensitive" as const,
+              },
+            },
+          },
+        }
+      : undefined;
 
     const [internships, total] = await Promise.all([
       prisma.internship.findMany({
         skip,
         take: limit,
+        where,
         include: {
           user: true,
         },
       }),
-      prisma.internship.count(),
+      prisma.internship.count({ where }),
     ]);
 
     return NextResponse.json(
@@ -100,6 +115,7 @@ export async function GET(request: Request) {
       }
     );
   } catch (error) {
+    console.error("Error fetching internships:", error);
     return NextResponse.json(
       {
         message: "Error fetching positions",
