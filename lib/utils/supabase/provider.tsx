@@ -2,7 +2,9 @@
 
 import React, { useEffect } from "react";
 import { createClient } from "./client";
-import { User } from "@supabase/supabase-js";
+import { Session, User } from "@supabase/supabase-js";
+import axiosInstance from "@/lib/axios";
+import { useStore } from "@/lib/stores/user.store";
 
 export const AuthContext = React.createContext<{
   user: User | null;
@@ -19,15 +21,21 @@ export const AuthContextProvider = ({
 }) => {
   const [loading, setLoading] = React.useState(true);
   const [user, setUser] = React.useState<User | null>(null);
+  const setUserStore = useStore((state) => state.setUser);
 
   useEffect(() => {
     const supabase = createClient();
+    // Get initial session and user on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        await setUser(session?.user ?? null);
-        console.log("session" + session)
-        console.log("user" + session?.user)
+      (event, session) => {
+        setUser(session?.user ?? null);
         setLoading(false);
+        if (event === "SIGNED_IN" && session) getUser(session);
       }
     );
 
@@ -35,6 +43,21 @@ export const AuthContextProvider = ({
       authListener?.subscription.unsubscribe();
     };
   }, []);
+
+  const getUser = async (session: Session) => {
+    if (session) {
+      try {
+        const response = await axiosInstance.get("/api/auth/me", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+        setUserStore(response.data?.data ?? null);
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      }
+    }
+  };
 
   return (
     <AuthContext.Provider value={{ user, loading }}>

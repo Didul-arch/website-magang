@@ -25,8 +25,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const { email, password, phoneNumber, university, major, semester, idCard } =
-    parsedBody.data;
+  const {
+    fullName,
+    email,
+    password,
+    phoneNumber,
+    university,
+    major,
+    semester,
+    idCard,
+  } = parsedBody.data;
 
   let idCardUrl: string | null = null;
   if (idCard) {
@@ -80,7 +88,7 @@ export async function POST(request: Request) {
       data: {
         id: signUpSupaResponse.data.user?.id,
         email,
-        name: email,
+        name: fullName || email.split("@")[0],
         phoneNumber: phoneNumber,
         role: "USER",
         createdAt: new Date(),
