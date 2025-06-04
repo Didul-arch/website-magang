@@ -77,6 +77,9 @@ export async function GET(request: Request) {
       prisma.internship.findMany({
         skip,
         take: limit,
+        include: {
+          user: true,
+        },
       }),
       prisma.internship.count(),
     ]);

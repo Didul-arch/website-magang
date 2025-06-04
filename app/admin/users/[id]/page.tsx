@@ -1,81 +1,91 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, CheckCircle, XCircle } from "lucide-react"
-import { doc, getDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase/config"
-import { useToast } from "@/components/ui/use-toast"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
+import { doc, getDoc } from "firebase/firestore";
+// import { db } from "@/lib/firebase/config"
+import { useToast } from "@/components/ui/use-toast";
 
 interface UserDetails {
-  fullName: string
-  email: string
-  phoneNumber: string
-  university: string
-  major: string
-  semester: string
-  idCardBase64?: string
-  idCardFileName?: string
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  university: string;
+  major: string;
+  semester: string;
+  idCardBase64?: string;
+  idCardFileName?: string;
   progress: {
-    registration: boolean
-    readSOP: boolean
-    completedTest: boolean
-  }
+    registration: boolean;
+    readSOP: boolean;
+    completedTest: boolean;
+  };
   testResult?: {
-    score: number
-    isPassed: boolean
-    answers: Record<string, string>
-    completedAt: string
-  }
-  createdAt: string
+    score: number;
+    isPassed: boolean;
+    answers: Record<string, string>;
+    completedAt: string;
+  };
+  createdAt: string;
 }
 
-export default function UserDetailsPage({ params }: { params: { id: string } }) {
-  const [user, setUser] = useState<UserDetails | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
-  const { toast } = useToast()
+export default function UserDetailsPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const [user, setUser] = useState<UserDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        const userDocRef = doc(db, "users", params.id)
-        const userDoc = await getDoc(userDocRef)
+        const userDocRef = doc(db, "users", params.id);
+        const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
-          setUser(userDoc.data() as UserDetails)
+          setUser(userDoc.data() as UserDetails);
         } else {
           toast({
             variant: "destructive",
             title: "Pengguna tidak ditemukan",
             description: "Data pengguna yang Anda cari tidak ditemukan.",
-          })
-          router.push("/admin")
+          });
+          router.push("/admin");
         }
       } catch (error) {
-        console.error("Error fetching user details:", error)
+        console.error("Error fetching user details:", error);
         toast({
           variant: "destructive",
           title: "Terjadi kesalahan",
           description: "Gagal memuat data pengguna.",
-        })
+        });
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchUserDetails()
-  }, [params.id, router, toast])
+    fetchUserDetails();
+  }, [params.id, router, toast]);
 
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
       </div>
-    )
+    );
   }
 
   if (!user) {
@@ -85,11 +95,13 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
           <Button variant="outline" size="icon" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight">Pengguna Tidak Ditemukan</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Pengguna Tidak Ditemukan
+          </h1>
         </div>
         <p>Data pengguna yang Anda cari tidak ditemukan.</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -114,24 +126,34 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
           <Card>
             <CardHeader>
               <CardTitle>Informasi Pribadi</CardTitle>
-              <CardDescription>Detail informasi pribadi peserta</CardDescription>
+              <CardDescription>
+                Detail informasi pribadi peserta
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Nama Lengkap</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Nama Lengkap
+                  </p>
                   <p>{user.fullName}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Email</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Email
+                  </p>
                   <p>{user.email}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Nomor HP</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Nomor HP
+                  </p>
                   <p>{user.phoneNumber}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Tanggal Pendaftaran</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Tanggal Pendaftaran
+                  </p>
                   <p>
                     {new Date(user.createdAt).toLocaleDateString("id-ID", {
                       day: "numeric",
@@ -147,20 +169,28 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
           <Card>
             <CardHeader>
               <CardTitle>Informasi Akademik</CardTitle>
-              <CardDescription>Detail informasi akademik peserta</CardDescription>
+              <CardDescription>
+                Detail informasi akademik peserta
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Universitas</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Universitas
+                  </p>
                   <p>{user.university}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Jurusan</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Jurusan
+                  </p>
                   <p>{user.major}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Semester</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Semester
+                  </p>
                   <p>{user.semester}</p>
                 </div>
               </div>
@@ -211,7 +241,9 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
                   <div>
                     <p className="font-medium">Tes Online</p>
                     <p className="text-sm text-muted-foreground">
-                      {user.progress.completedTest ? "Selesai" : "Belum selesai"}
+                      {user.progress.completedTest
+                        ? "Selesai"
+                        : "Belum selesai"}
                     </p>
                   </div>
                 </div>
@@ -233,7 +265,8 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
                     {user.idCardFileName?.toLowerCase().endsWith(".pdf") ? (
                       <div className="flex h-40 items-center justify-center bg-muted p-4">
                         <p className="text-center text-muted-foreground">
-                          File PDF tidak dapat ditampilkan. Silakan unduh untuk melihat.
+                          File PDF tidak dapat ditampilkan. Silakan unduh untuk
+                          melihat.
                         </p>
                       </div>
                     ) : (
@@ -244,17 +277,20 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
                       />
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">Nama file: {user.idCardFileName || "Dokumen KTP/KTM"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Nama file: {user.idCardFileName || "Dokumen KTP/KTM"}
+                  </p>
                   <Button
                     variant="outline"
                     onClick={() => {
                       // Create a download link for the base64 image
-                      const link = document.createElement("a")
-                      link.href = user.idCardBase64 as string
-                      link.download = user.idCardFileName || "dokumen-identitas"
-                      document.body.appendChild(link)
-                      link.click()
-                      document.body.removeChild(link)
+                      const link = document.createElement("a");
+                      link.href = user.idCardBase64 as string;
+                      link.download =
+                        user.idCardFileName || "dokumen-identitas";
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
                     }}
                   >
                     Unduh Dokumen
@@ -262,7 +298,9 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
                 </div>
               ) : (
                 <div className="flex h-40 items-center justify-center">
-                  <p className="text-muted-foreground">Tidak ada dokumen KTP/KTM yang diunggah</p>
+                  <p className="text-muted-foreground">
+                    Tidak ada dokumen KTP/KTM yang diunggah
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -279,16 +317,21 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
               {user.testResult ? (
                 <div className="space-y-6">
                   <div className="flex flex-col items-center justify-center space-y-2 py-6">
-                    <div className="text-6xl font-bold">{user.testResult.score}%</div>
+                    <div className="text-6xl font-bold">
+                      {user.testResult.score}%
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       Tes diselesaikan pada{" "}
-                      {new Date(user.testResult.completedAt).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {new Date(user.testResult.completedAt).toLocaleDateString(
+                        "id-ID",
+                        {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
                     </p>
                   </div>
 
@@ -298,9 +341,12 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
                         <>
                           <CheckCircle className="h-5 w-5 text-green-500" />
                           <div>
-                            <p className="font-medium">Lolos ke Tahap Wawancara</p>
+                            <p className="font-medium">
+                              Lolos ke Tahap Wawancara
+                            </p>
                             <p className="text-sm text-muted-foreground">
-                              Peserta telah lolos ke tahap wawancara program magang.
+                              Peserta telah lolos ke tahap wawancara program
+                              magang.
                             </p>
                           </div>
                         </>
@@ -308,9 +354,12 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
                         <>
                           <XCircle className="h-5 w-5 text-red-500" />
                           <div>
-                            <p className="font-medium">Belum Lolos ke Tahap Wawancara</p>
+                            <p className="font-medium">
+                              Belum Lolos ke Tahap Wawancara
+                            </p>
                             <p className="text-sm text-muted-foreground">
-                              Peserta belum lolos ke tahap wawancara program magang.
+                              Peserta belum lolos ke tahap wawancara program
+                              magang.
                             </p>
                           </div>
                         </>
@@ -320,7 +369,9 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
                 </div>
               ) : (
                 <div className="flex h-40 items-center justify-center">
-                  <p className="text-muted-foreground">Peserta belum menyelesaikan tes</p>
+                  <p className="text-muted-foreground">
+                    Peserta belum menyelesaikan tes
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -328,5 +379,5 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

@@ -20,37 +20,39 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, Search, UserX } from "lucide-react";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
-// import { db } from "@/lib/firebase/config"
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
+import axiosInstance from "@/lib/axios";
 
 interface User {
-  id: string;
-  fullName: string;
-  email: string;
-  university: string;
-  major: string;
-  progress: {
-    registration: boolean;
-    readSOP: boolean;
-    completedTest: boolean;
-  };
-  testResult?: {
-    score: number;
-    isPassed: boolean;
+  id: number;
+  company: string;
+  degree: string;
+  semester: number;
+  idCard: string;
+  cv: string | null;
+  portfolio: string | null;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  status: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    phoneNumber: string;
+    role: string;
+    createdAt: string;
+    updatedAt: string;
   };
 }
 
+const LIMIT = 10; // Jumlah data per halaman
+
 export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [page, setPage] = useState(1);
+  const [maxPage, setMaxPage] = useState(1);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -58,21 +60,41 @@ export default function AdminPage() {
 
   useEffect(() => {
     const fetchUsers = async () => {
+      setIsLoading(true);
       try {
-        const usersCollection = collection(db, "users");
-        const usersQuery = query(usersCollection, where("role", "==", "user"));
-        const usersSnapshot = await getDocs(usersQuery);
+        const response = await axiosInstance.get(
+          `/api/internship?limit=${LIMIT}&page=${page}`
+        );
 
-        const fetchedUsers: User[] = [];
-        usersSnapshot.forEach((doc) => {
-          fetchedUsers.push({
-            id: doc.id,
-            ...doc.data(),
-          } as User);
-        });
+        const fetchedUsers: User[] = response.data.data.map((user: any) => ({
+          id: user.id,
+          company: user.company,
+          degree: user.degree,
+          semester: user.semester,
+          idCard: user.idCard,
+          cv: user.cv,
+          portfolio: user.portfolio,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          userId: user.userId,
+          status: user.status,
+          user: {
+            id: user.user.id,
+            name: user.user.name,
+            email: user.user.email,
+            phoneNumber: user.user.phoneNumber,
+            role: user.user.role,
+            createdAt: user.user.createdAt,
+            updatedAt: user.user.updatedAt,
+          },
+        }));
 
         setUsers(fetchedUsers);
         setFilteredUsers(fetchedUsers);
+
+        // Assume response.data.pagination.totalPages contains the total number of users
+        const total = response.data?.pagination?.totalPages || 0;
+        setMaxPage(total);
       } catch (error) {
         console.error("Error fetching users:", error);
         toast({
@@ -86,59 +108,15 @@ export default function AdminPage() {
     };
 
     fetchUsers();
-  }, [toast]);
+  }, [toast, page]);
 
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredUsers(users);
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = users.filter(
-        (user) =>
-          user.fullName.toLowerCase().includes(query) ||
-          user.email.toLowerCase().includes(query) ||
-          user.university.toLowerCase().includes(query) ||
-          user.major.toLowerCase().includes(query)
-      );
-      setFilteredUsers(filtered);
-    }
-  }, [searchQuery, users]);
-
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus peserta ini?")) {
-      return;
-    }
-
-    try {
-      await deleteDoc(doc(db, "users", userId));
-
-      setUsers(users.filter((user) => user.id !== userId));
-      setFilteredUsers(filteredUsers.filter((user) => user.id !== userId));
-
-      toast({
-        title: "Peserta dihapus",
-        description: "Data peserta berhasil dihapus.",
-      });
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      toast({
-        variant: "destructive",
-        title: "Terjadi kesalahan",
-        description: "Gagal menghapus data peserta.",
-      });
-    }
+  // Pagination handlers
+  const handlePrevPage = () => {
+    if (page > 1) setPage(page - 1);
   };
 
-  const getProgressStatus = (user: User) => {
-    if (user.progress.completedTest) {
-      return <Badge className="bg-green-500">Selesai</Badge>;
-    } else if (user.progress.readSOP) {
-      return <Badge className="bg-blue-500">Tes</Badge>;
-    } else if (user.progress.registration) {
-      return <Badge className="bg-yellow-500">SOP</Badge>;
-    } else {
-      return <Badge variant="outline">Baru</Badge>;
-    }
+  const handleNextPage = () => {
+    if (page < maxPage) setPage(page + 1);
   };
 
   return (
@@ -148,19 +126,6 @@ export default function AdminPage() {
         <p className="text-muted-foreground">
           Kelola data peserta program magang PT Mada Wikri Tunggal
         </p>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Cari peserta..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
       </div>
 
       <Card>
@@ -183,68 +148,73 @@ export default function AdminPage() {
               </p>
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nama</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Universitas</TableHead>
-                    <TableHead>Jurusan</TableHead>
-                    <TableHead>Progress</TableHead>
-                    <TableHead>Skor</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">
-                        {user.fullName}
-                      </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.university}</TableCell>
-                      <TableCell>{user.major}</TableCell>
-                      <TableCell>{getProgressStatus(user)}</TableCell>
-                      <TableCell>
-                        {user.testResult ? (
-                          <span
-                            className={
-                              user.testResult.isPassed
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }
-                          >
-                            {user.testResult.score}%
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Link href={`/admin/users/${user.id}`}>
+            <>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Universitas</TableHead>
+                      <TableHead>Jurusan</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">
+                          {user.user?.name}
+                        </TableCell>
+                        <TableCell>{user.user?.email}</TableCell>
+                        <TableCell>{user.company}</TableCell>
+                        <TableCell>{user.degree}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {/* <Link href={`/admin/users/${user.id}`}> */}
                             <Button variant="outline" size="icon">
                               <Eye className="h-4 w-4" />
                               <span className="sr-only">Detail</span>
                             </Button>
-                          </Link>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="text-red-500 hover:text-red-600"
-                            onClick={() => handleDeleteUser(user.id)}
-                          >
-                            <UserX className="h-4 w-4" />
-                            <span className="sr-only">Hapus</span>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                            {/* </Link> */}
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="text-red-500 hover:text-red-600"
+                            >
+                              <UserX className="h-4 w-4" />
+                              <span className="sr-only">Hapus</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {/* Pagination Controls */}
+              <div className="flex justify-between items-center mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrevPage}
+                  disabled={page === 1}
+                >
+                  Prev
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Halaman {page} dari {maxPage}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNextPage}
+                  disabled={page === maxPage}
+                >
+                  Next
+                </Button>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
