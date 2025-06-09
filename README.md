@@ -1,175 +1,61 @@
-# Sistem Pendaftaran Internship PT Mada Wikri Tunggal
+# Website Magang PT Mada Wikri Tunggal
 
-Sistem pendaftaran internship berbasis Next.js dengan TypeScript dan Firebase untuk PT Mada Wikri Tunggal.
+Platform pendaftaran internship dengan sistem tes online dan rekomendasi AI.
 
-## Fitur
+## 🎯 Fitur Utama
 
-- **Landing Page** – Deskripsi program, profil perusahaan, dan tombol pendaftaran
-- **Registrasi & Login** – Form pendaftaran dengan validasi dan autentikasi Firebase
-- **Dashboard User** – Progress bar pendaftaran dan navigasi ke tiap tahap
-- **Halaman SOP** – Viewer dokumen SOP dengan konfirmasi pembacaan
-- **Halaman Tes Online** – Soal multiple-choice dengan bobot penilaian
-- **Halaman Hasil** – Tampilan skor dan status kelulusan
-- **Admin Panel** – CRUD soal, manajemen peserta, dan export data
+**User Flow:**
+Landing Page → Pilih Vacancy → Register/Login → Application Form → Baca SOP → Tes Online → Hasil
 
-## Teknologi
+**Admin Flow:**
+Dashboard → Kelola Vacancy & Soal → Lihat Pendaftar → AI Recommendation → Keputusan Akhir
 
-- Next.js 14 (App Router)
-- TypeScript
-- Firebase (Auth, Firestore)
-- Tailwind CSS
-- shadcn/ui Components
+## 🚀 Progress
 
-## Setup Firebase
+### ✅ Done
 
-### 1. Membuat Project Firebase
+- [x] Database & API setup
+- [x] Authentication (Supabase)
+- [x] UI Components (shadcn/ui)
+- [x] Landing page dengan vacancy list
+- [x] Header dengan user info dan dropdown
 
-1. Buka [Firebase Console](https://console.firebase.google.com/)
-2. Klik "Add project" dan ikuti langkah-langkah untuk membuat project baru
-3. Aktifkan Google Analytics (opsional)
+### 🔄 In Progress
 
-### 2. Mengaktifkan Firebase Authentication
+- [ ] Auth pages (login/register)
+- [ ] Application form
+- [ ] Test system
 
-1. Di sidebar Firebase Console, klik "Authentication"
-2. Klik "Get started"
-3. Aktifkan metode "Email/Password"
+### 📝 Todo
 
-### 3. Membuat Firestore Database
+- [ ] Admin dashboard
+- [ ] AI CV analysis (OpenAI)
 
-1. Di sidebar, klik "Firestore Database"
-2. Klik "Create database"
-3. Pilih mode "Start in production mode" atau "Start in test mode" (untuk pengembangan)
-4. Pilih lokasi server terdekat
+## 🛠️ Tech Stack
 
-### 4. Mendapatkan Firebase Config
+Next.js 15 • TypeScript • Prisma • Supabase • shadcn/ui
 
-1. Di sidebar, klik ikon roda gigi (Project settings)
-2. Scroll ke bawah ke "Your apps" dan klik ikon web (</>) untuk menambahkan aplikasi web
-3. Beri nama aplikasi dan klik "Register app"
-4. Salin konfigurasi Firebase yang muncul, Anda akan memerlukan:
-   - apiKey
-   - authDomain
-   - projectId
-   - messagingSenderId
-   - appId
+## 🚀 Quick Start
 
-### 5. Firestore Rules
+```bash
+pnpm install
+pnpm prisma generate
+pnpm dev
+```
 
-Buka "Firestore Database" > "Rules" dan terapkan rules berikut:
+## 📡 API Endpoints
 
-\`\`\`
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Allow authenticated users to read and write their own data
-    match /users/{userId} {
-      allow create;
-      allow read, update, delete: if request.auth != null && (request.auth.uid == userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
-    }
-    
-    // Allow authenticated users to read questions
-    match /questions/{questionId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-  }
-}
-\`\`\`
+```
+GET  /api/auth/me           # Current user
+POST /api/vacancy/list      # Vacancy list with filters
+GET  /api/vacancy/[id]      # Vacancy detail
+POST /api/internship        # Submit application
+```
 
-## Instalasi dan Penggunaan
+## 🗂️ Database
 
-### Prasyarat
+User → Application → Vacancy → Question/Answer → Scoring
 
-- Node.js 18.x atau lebih baru
-- npm atau yarn
+---
 
-### Langkah-langkah Instalasi
-
-1. Clone repository:
-   \`\`\`bash
-   git clone https://github.com/username/internship-system.git
-   cd internship-system
-   \`\`\`
-
-2. Install dependencies:
-   \`\`\`bash
-   npm install
-   # atau
-   yarn install
-   \`\`\`
-
-3. Salin file `.env.local.example` menjadi `.env.local` dan isi dengan konfigurasi Firebase Anda:
-   \`\`\`bash
-   cp .env.local.example .env.local
-   \`\`\`
-
-4. Jalankan aplikasi dalam mode development:
-   \`\`\`bash
-   npm run dev
-   # atau
-   yarn dev
-   \`\`\`
-
-5. Buka [http://localhost:3000](http://localhost:3000) di browser Anda
-
-### Build dan Deploy
-
-1. Build aplikasi:
-   \`\`\`bash
-   npm run build
-   # atau
-   yarn build
-   \`\`\`
-
-2. Deploy ke Vercel:
-   \`\`\`bash
-   npm install -g vercel
-   vercel
-   \`\`\`
-
-   Atau deploy ke Netlify dengan mengikuti instruksi di dashboard Netlify.
-
-## Membuat Admin
-
-Untuk membuat akun admin:
-
-1. Daftar sebagai pengguna biasa melalui halaman registrasi
-2. Gunakan Firebase Console untuk mengubah role pengguna:
-   - Buka Firestore Database
-   - Cari dokumen pengguna di koleksi "users"
-   - Edit field "role" menjadi "admin"
-
-## Struktur Folder
-
-\`\`\`
-/
-├── app/                    # App Router pages
-│   ├── admin/              # Admin panel routes
-│   ├── dashboard/          # User dashboard routes
-│   ├── login/              # Login page
-│   ├── register/           # Registration page
-│   └── layout.tsx          # Root layout
-├── components/             # Reusable components
-├── hooks/                  # Custom hooks
-├── lib/                    # Utility functions
-│   └── firebase/           # Firebase configuration
-├── public/                 # Static assets
-├── .env.local.example      # Environment variables example
-├── next.config.js          # Next.js configuration
-├── package.json            # Project dependencies
-├── README.md               # Project documentation
-├── tailwind.config.js      # Tailwind CSS configuration
-└── tsconfig.json           # TypeScript configuration
-\`\`\`
-
-## Pengembangan Lebih Lanjut
-
-- Implementasi notifikasi email
-- Integrasi dengan sistem HR
-- Penambahan fitur upload portofolio
-- Dashboard analitik untuk admin
-- Sistem penjadwalan wawancara
-
-## Lisensi
-
-[MIT](LICENSE)
+README sebagai progress tracker - update checklist setiap fitur selesai!

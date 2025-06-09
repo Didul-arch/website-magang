@@ -5,15 +5,44 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Menu, X } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { AuthContext } from "@/lib/utils/supabase/provider";
+import { useFetchData } from "@/hooks/useApi";
+import axiosInstance from "@/lib/axios";
+
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
 
 export default function Header() {
-  // const { user } = useAuth()
   const { user, loading } = useContext(AuthContext);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // Fetch user data when user is available
+  const { data: userApiData, isLoading: userLoading } = useFetchData<UserData>(
+    user ? "/api/auth/me" : null
+  );
+
+  useEffect(() => {
+    if (userApiData) {
+      setUserData(userApiData);
+    }
+  }, [userApiData]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,11 +58,27 @@ export default function Header() {
   };
 
   const getDashboardLink = () => {
-    // This is a simplified check. In a real app, you'd check user claims
-    if (pathname.startsWith("/admin")) {
+    if (pathname.startsWith("/admin") || userData?.role === "ADMIN") {
       return "/admin";
     }
     return "/dashboard";
+  };
+
+  const handleLogout = async () => {
+    try {
+      await axiosInstance.get("/api/auth/logout");
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   };
 
   return (
@@ -58,7 +103,7 @@ export default function Header() {
             >
               Beranda
             </Link>
-            {user && (
+            {userData && (
               <Link
                 href={getDashboardLink()}
                 className={`text-sm font-medium transition-colors hover:text-primary ${
@@ -72,14 +117,58 @@ export default function Header() {
             )}
           </nav>
         </div>
+
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-4">
-            {user ? (
-              <Link href={getDashboardLink()}>
-                <Button variant="outline" size="sm">
-                  Dashboard
-                </Button>
-              </Link>
+            {userData ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="relative h-8 w-8 rounded-full"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage
+                        src="/placeholder-user.jpg"
+                        alt={userData.name}
+                      />
+                      <AvatarFallback>
+                        {getInitials(userData.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {userData.name}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {userData.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href={getDashboardLink()}
+                      className="flex items-center"
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-red-600"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <>
                 <Link href="/login">
@@ -107,6 +196,8 @@ export default function Header() {
           </button>
         </div>
       </div>
+
+      {/* Mobile menu */}
       {isMenuOpen && (
         <div className="md:hidden">
           <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
@@ -119,7 +210,7 @@ export default function Header() {
             >
               Beranda
             </Link>
-            {user && (
+            {userData && (
               <Link
                 href={getDashboardLink()}
                 className={`text-sm font-medium transition-colors hover:text-primary ${
@@ -132,15 +223,35 @@ export default function Header() {
                 Dashboard
               </Link>
             )}
-            {user ? (
-              <Link
-                href={getDashboardLink()}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Button variant="outline" size="sm" className="w-full">
-                  Dashboard
+            {userData ? (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 p-2 rounded-md bg-muted">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage
+                      src="/placeholder-user.jpg"
+                      alt={userData.name}
+                    />
+                    <AvatarFallback className="text-xs">
+                      {getInitials(userData.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm font-medium">{userData.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {userData.email}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="text-red-600"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
                 </Button>
-              </Link>
+              </div>
             ) : (
               <div className="flex flex-col gap-2">
                 <Link href="/login" onClick={() => setIsMenuOpen(false)}>
