@@ -8,7 +8,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, FileText, CheckCircle } from "lucide-react";
+import { Users, FileText, Download } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -18,9 +18,9 @@ import { createClient } from "@/lib/utils/supabase/client";
 
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Tes Online", href: "/dashboard/test", icon: FileText },
-  { label: "Hasil Tes", href: "/dashboard/results", icon: CheckCircle },
+  { label: "Manajemen Peserta", href: "/admin", icon: Users },
+  { label: "Manajemen Soal", href: "/admin/questions", icon: FileText },
+  { label: "Ekspor Data", href: "/admin/export", icon: Download },
 ];
 
 export function AppSidebar() {
@@ -37,7 +37,7 @@ return (
     <Sidebar variant="floating">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>Menu Admin</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (

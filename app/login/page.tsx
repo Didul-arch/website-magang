@@ -64,10 +64,10 @@ export default function LoginPage() {
       toast.success(Msg, {
         data: {
           title: "Login berhasil!",
-          description: "Anda akan diarahkan ke dashboard.",
+          description: "Anda akan diarahkan ke beranda.",
         },
       });
-      window.location.href = "/dashboard"; 
+      window.location.href = "/"; 
     } catch (error: any) {
       console.error("Login error:", error);
       toast.error(Msg, {

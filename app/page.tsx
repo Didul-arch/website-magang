@@ -1,15 +1,95 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Header from "@/components/header";
+import { useSubmitData } from "@/hooks/useApi";
 import {
   ArrowRight,
   Award,
   Calendar,
   Briefcase,
   GraduationCap,
+  MapPin,
+  Search,
+  Filter,
+  Users,
+  Clock,
 } from "lucide-react";
 
+interface Vacancy {
+  id: number;
+  title: string;
+  description: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  thumbnail?: string;
+  position?: {
+    title: string;
+  };
+}
+
 export default function Home() {
+  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTitle, setSearchTitle] = useState("");
+  const [searchLocation, setSearchLocation] = useState("");
+  const { submitData } = useSubmitData<{ data: Vacancy[] }>();
+
+  // Fetch vacancies
+  const fetchVacancies = async (filters = {}) => {
+    setLoading(true);
+    try {
+      const response = await submitData("/api/vacancy/list", "post", filters);
+      if (response?.data) {
+        setVacancies(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching vacancies:", error);
+      setVacancies([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchVacancies();
+  }, []);
+
+  const handleSearch = () => {
+    const filters: any = {};
+    if (searchTitle) filters.title = searchTitle;
+    if (searchLocation) filters.location = searchLocation;
+    fetchVacancies(filters);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
   return (
     <>
       <Header />
@@ -21,7 +101,7 @@ export default function Home() {
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
               <div className="space-y-4">
                 <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">
-                  Program Magang 2024
+                  Program Magang 2025
                 </div>
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl">
                   Program Magang PT Mada Wikri Tunggal
@@ -32,12 +112,18 @@ export default function Home() {
                   mahasiswa baru dan berpengalaman.
                 </p>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Link href="/login">
-                    <Button size="lg" className="gap-1.5">
-                      Mulai Sekarang
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </Link>
+                  <Button
+                    size="lg"
+                    className="gap-1.5"
+                    onClick={() => {
+                      document
+                        .getElementById("vacancies")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                  >
+                    Lihat Lowongan
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
               <div className="flex justify-center">
@@ -52,8 +138,148 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Vacancies Section */}
+        <section id="vacancies" className="py-12 bg-muted/30">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
+                  Lowongan Magang Tersedia
+                </h2>
+                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  Pilih posisi magang yang sesuai dengan minat dan keahlian Anda
+                </p>
+              </div>
+            </div>
+
+            {/* Search & Filter */}
+            <div className="flex flex-col md:flex-row gap-4 mb-8 max-w-2xl mx-auto">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Cari berdasarkan posisi..."
+                  value={searchTitle}
+                  onChange={(e) => setSearchTitle(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="flex-1 relative">
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Cari berdasarkan lokasi..."
+                  value={searchLocation}
+                  onChange={(e) => setSearchLocation(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button onClick={handleSearch} className="gap-2">
+                <Filter className="h-4 w-4" />
+                Cari
+              </Button>
+            </div>
+
+            {/* Vacancy Cards */}
+            {loading ? (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {[...Array(6)].map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardHeader>
+                      <div className="h-4 bg-muted rounded w-3/4"></div>
+                      <div className="h-3 bg-muted rounded w-1/2"></div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="h-3 bg-muted rounded"></div>
+                        <div className="h-3 bg-muted rounded w-5/6"></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : vacancies.length > 0 ? (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {vacancies.map((vacancy) => (
+                  <Card
+                    key={vacancy.id}
+                    className="group hover:shadow-lg transition-all duration-200 border-0 shadow-md"
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <Badge variant="secondary" className="mb-2">
+                          {vacancy.position?.title || "Internship"}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className="text-green-600 border-green-600"
+                        >
+                          OPEN
+                        </Badge>
+                      </div>
+                      <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                        {vacancy.title}
+                      </CardTitle>
+                      <CardDescription className="flex items-center gap-2 text-sm">
+                        <MapPin className="h-4 w-4" />
+                        {vacancy.location}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pb-4">
+                      <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                        {vacancy.description}
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>Mulai: {formatDate(vacancy.startDate)}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>Selesai: {formatDate(vacancy.endDate)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="pt-0">
+                      <Link
+                        href={`/application?vacancy=${vacancy.id}`}
+                        className="w-full"
+                      >
+                        <Button className="w-full group-hover:bg-primary/90 transition-colors gap-2">
+                          <Users className="h-4 w-4" />
+                          Daftar Sekarang
+                        </Button>
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Briefcase className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  Tidak ada lowongan ditemukan
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  Coba ubah kata kunci pencarian atau filter lokasi
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchTitle("");
+                    setSearchLocation("");
+                    fetchVacancies();
+                  }}
+                >
+                  Reset Pencarian
+                </Button>
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* Program Details */}
-        <section className="py-12 bg-muted/50">
+        <section className="py-12">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -96,7 +322,7 @@ export default function Home() {
         </section>
 
         {/* Company Profile */}
-        <section className="py-12">
+        <section className="py-12 bg-muted/30">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
               <div className="space-y-4">
@@ -148,12 +374,19 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Link href="/login">
-                  <Button size="lg" variant="secondary" className="gap-1.5">
-                    Mulai Sekarang
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="gap-1.5"
+                  onClick={() => {
+                    document
+                      .getElementById("vacancies")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
+                  Lihat Lowongan
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
