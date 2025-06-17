@@ -96,10 +96,10 @@ export async function updateSession(request: NextRequest) {
 
     if (!data || data.role !== "ADMIN") {
       console.log(
-        `[Middleware] User is not admin. Redirecting from ${pathname} to /dashboard`
+        `[Middleware] User is not admin. Redirecting from ${pathname} to /`
       );
       const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
+      url.pathname = "/";
       return NextResponse.redirect(url);
     }
 

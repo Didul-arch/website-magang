@@ -66,7 +66,7 @@ export default function Header() {
 
   const handleLogout = async () => {
     try {
-      await axiosInstance.get("/api/auth/logout");
+      await axiosInstance.post("/api/auth/logout");
       window.location.href = "/";
     } catch (error) {
       console.error("Error logging out:", error);
@@ -103,18 +103,6 @@ export default function Header() {
             >
               Beranda
             </Link>
-            {userData && (
-              <Link
-                href={getDashboardLink()}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname.includes("/dashboard") || pathname.includes("/admin")
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                }`}
-              >
-                Dashboard
-              </Link>
-            )}
           </nav>
         </div>
 
@@ -149,16 +137,6 @@ export default function Header() {
                       </p>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href={getDashboardLink()}
-                      className="flex items-center"
-                    >
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Dashboard</span>
-                    </Link>
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleLogout}
@@ -211,17 +189,7 @@ export default function Header() {
               Beranda
             </Link>
             {userData && (
-              <Link
-                href={getDashboardLink()}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname.includes("/dashboard") || pathname.includes("/admin")
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
+              <></>
             )}
             {userData ? (
               <div className="flex flex-col gap-2">
