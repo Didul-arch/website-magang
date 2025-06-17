@@ -1,7 +1,7 @@
 "use client";
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AdminAppSidebar } from "@/components/admin-app-sidebar";
 
 export default function DashboardLayout({
   children,
@@ -10,7 +10,7 @@ export default function DashboardLayout({
 }) {
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AdminAppSidebar />
       <main className="p-2 w-full">
         <SidebarTrigger />
         <div className="py-6 px-2">{children}</div>

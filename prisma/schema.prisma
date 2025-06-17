@@ -73,6 +73,7 @@ model Application {
   status        String      @default("PENDING")
   cv            String?
   portfolio     String?
+  reason        String?
   createdAt     DateTime    @default(now()) @map(name: "created_at")
   updatedAt     DateTime    @updatedAt @map(name: "updated_at")
   internship    Internship? @relation(fields: [internshipId], references: [id])
@@ -125,6 +126,7 @@ model Notification {
   id            Int         @id @default(autoincrement())
   title         String
   message       String
+  isRead        Boolean     @default(false) @map(name: "is_read")
   createdAt     DateTime    @default(now()) @map(name: "created_at")
   updatedAt     DateTime    @updatedAt @map(name: "updated_at")
   user          User?       @relation(fields: [userId], references: [id])
