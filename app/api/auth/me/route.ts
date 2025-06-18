@@ -49,6 +49,12 @@ export async function GET(request: Request) {
         email: true,
         phoneNumber: true,
         role: true,
+        internship: {
+          select: {
+            id: true,
+            portfolio: true,
+          },
+        }
       },
     });
 

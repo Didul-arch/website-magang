@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import Footer from "@/components/footer";
 import "./globals.css";
 import { AuthContextProvider } from "@/lib/utils/supabase/provider";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -32,6 +33,7 @@ export default function RootLayout({
             <div className="flex min-h-screen flex-col">
               <main className="flex-1">{children}</main>
               <Footer />
+              <Toaster />
             </div>
           </AuthContextProvider>
         </ThemeProvider>

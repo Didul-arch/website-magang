@@ -7,6 +7,10 @@ interface UserStore {
     name: string;
     phoneNumber?: string;
     role: 'USER' | 'ADMIN';
+    internship: {
+      id: number;
+      portfolio: string | null;
+    }
   } | null;
   setUser: (user: UserStore['user']) => void;
 }
@@ -19,5 +23,9 @@ export const useStore = create<UserStore>((set) => ({
     name: user.name,
     phoneNumber: user.phoneNumber,
     role: user.role,
+    internship: {
+      id: user.internship.id,
+      portfolio: user.internship.portfolio
+    }
   } : null})
 }));

@@ -52,6 +52,7 @@ export const AuthContextProvider = ({
             Authorization: `Bearer ${session.access_token}`,
           },
         });
+        console.log("User data fetched:", response.data?.data);
         setUserStore(response.data?.data ?? null);
       } catch (error) {
         console.error("Failed to fetch user data:", error);

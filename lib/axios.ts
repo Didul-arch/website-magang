@@ -6,24 +6,22 @@ const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  validateStatus: () => true, // Accept all HTTP status codes as valid
 });
 
 axiosInstance.interceptors.request.use(
   async (config) => {
     const supabase = createClient();
     let sessionData;
-    console.log("Fetching session from Supabase...");
     try {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      console.log("Session fetched successfully.");
       if (session) sessionData = session;
     } catch (error) {
       console.error("Error fetching session:", error);
       return config; // Proceed without modifying headers if there's an error
     }
-    console.log("Current session:", sessionData);
     const token = sessionData?.access_token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

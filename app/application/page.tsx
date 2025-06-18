@@ -2,6 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,9 +14,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
 import Header from "@/components/header";
 import axiosInstance from "@/lib/axios";
+import { useStore } from "@/lib/stores/user.store";
 
 interface UserData {
   id: string;
@@ -35,34 +36,22 @@ export default function ApplicationPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const vacancyId = searchParams.get("vacancy");
-  const [user, setUser] = useState<UserData | null>(null);
+  const user = useStore((state) => state.user);
   const [vacancy, setVacancy] = useState<Vacancy | null>(null);
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [portoLink, setPortoLink] = useState("");
   const [alasan, setAlasan] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
-
-  // Fetch user info
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await axiosInstance.get("/api/auth/me");
-        setUser(res.data?.data);
-      } catch {
-        setUser(null);
-      }
-    };
-    fetchUser();
-  }, []);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch vacancy info
   useEffect(() => {
     const fetchVacancy = async () => {
       if (!vacancyId) return;
       try {
-        const res = await axiosInstance.post("/api/vacancy/list", { id: Number(vacancyId) });
-        if (res.data?.data?.length > 0) setVacancy(res.data.data[0]);
+        const res = await axiosInstance.get(`/api/vacancy/${Number(vacancyId)}`);
+        if (res.data?.data) setVacancy(res.data.data);
       } catch {
         setVacancy(null);
       } finally {
@@ -74,23 +63,42 @@ export default function ApplicationPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || isSubmitting || !user?.internship.id || !vacancyId) return; // Prevent submission while loading or if required data is missing
+
     if (!cvFile || !portoLink) {
       return toast.error("Mohon upload CV dan isi link portofolio.");
     }
-    try {
-      // Upload CV
-      const formDataCV = new FormData();
-      formDataCV.append("file", cvFile);
-      formDataCV.append("folder", "cv");
-      formDataCV.append("bucket", "all");
-      await axiosInstance.post("/api/upload/cv", formDataCV);
 
-    //LOGIC BELOM SEMUA WOI BACKEND BLEUM SELESAI
+    try {
+      setIsSubmitting(true);
+
+      const formData = new FormData();
+      formData.append("internshipId", user.internship.id?.toString());
+      formData.append("vacancyId", vacancyId);
+      formData.append("cv", cvFile);
+      formData.append("portfolio", portoLink);
+      formData.append("reason", alasan);
+      const response = await axiosInstance.post("/api/vacancy/apply", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (!response.status?.toString()?.startsWith("2")) {
+        throw new Error(response.data?.message || "Gagal mengirim lamaran");
+      }
       setSubmitted(true);
       toast.success("Lamaran berhasil dikirim! Akan diarahkan ke halaman tes.");
       setTimeout(() => router.push("/application/test-redirect"), 1500);
     } catch (err) {
-      toast.error("Gagal mengirim lamaran. Coba lagi.");
+      console.error("Error submitting application:", err);
+      if (err instanceof Error) {
+        toast.error(err.message || "Terjadi kesalahan saat mengirim lamaran.");
+        return;
+      }
+      toast.error("Terjadi kesalahan saat mengirim lamaran.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -152,6 +160,7 @@ export default function ApplicationPage() {
                     type="file"
                     accept=".pdf"
                     onChange={e => setCvFile(e.target.files?.[0] || null)}
+                    disabled={loading || isSubmitting}
                     required
                   />
                   <span className="text-xs text-muted-foreground">File akan disimpan di folder <b>cv</b> pada bucket <b>all</b>.</span>
@@ -163,6 +172,7 @@ export default function ApplicationPage() {
                     placeholder="https://website-portofolio.com"
                     value={portoLink}
                     onChange={e => setPortoLink(e.target.value)}
+                    disabled={loading || isSubmitting}
                     required
                   />
                   <span className="text-xs text-muted-foreground">Masukkan link website portofolio Anda.</span>
@@ -172,12 +182,13 @@ export default function ApplicationPage() {
                   <Textarea
                     value={alasan}
                     onChange={e => setAlasan(e.target.value)}
+                    disabled={loading || isSubmitting}
                     required
                     placeholder="Ceritakan motivasi Anda..."
                   />
                 </div>
                 <CardFooter className="p-0 pt-2">
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  <Button type="submit" className="w-full" disabled={loading || isSubmitting}>
                     Kirim Lamaran
                   </Button>
                 </CardFooter>
