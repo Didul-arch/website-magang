@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +32,19 @@ interface Vacancy {
   location: string;
 }
 
-export default function ApplicationPage() {
+export default function Page() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-lg text-muted-foreground">Loading...</div>
+      </div>
+    }>
+      <ApplicationComponent />
+    </Suspense>
+  )
+}
+
+function ApplicationComponent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const vacancyId = searchParams.get("vacancy");
