@@ -101,7 +101,7 @@ function ApplicationComponent() {
       }
       setSubmitted(true);
       toast.success("Lamaran berhasil dikirim! Akan diarahkan ke halaman tes.");
-      setTimeout(() => router.push("/application/test-redirect"), 1500);
+      setTimeout(() => router.push("/"), 1500);
     } catch (err) {
       console.error("Error submitting application:", err);
       if (err instanceof Error) {
