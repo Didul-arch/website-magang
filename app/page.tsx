@@ -201,7 +201,7 @@ export default function Home() {
                 {vacancies.map((vacancy) => (
                   <Card
                     key={vacancy.id}
-                    className="group hover:shadow-lg transition-all duration-200 border-0 shadow-md"
+                    className="group flex flex-col hover:shadow-lg transition-all duration-200 border-0 shadow-md"
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
@@ -224,23 +224,25 @@ export default function Home() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pb-4">
-                      <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                      <p className="text-sm text-muted-foreground line-clamp-3">
                         {vacancy.description}
                       </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>Mulai: {formatDate(vacancy.startDate)}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>Selesai: {formatDate(vacancy.endDate)}</span>
-                        </div>
-                      </div>
                     </CardContent>
-                    <CardFooter className="pt-0">
+                    <CardFooter className="pt-0 mt-auto flex flex-col items-start gap-4">
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            <span>Mulai: {formatDate(vacancy.startDate)}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>Selesai: {formatDate(vacancy.endDate)}</span>
+                          </div>
+                        </div>
+                      </div>
                       <Link
                         href={`/application?vacancy=${vacancy.id}`}
                         className="w-full"

@@ -111,7 +111,7 @@ export default function QuestionsPage() {
         limit: pagination.limit.toString(),
       });
 
-      if (vacancyFilter && vacancyFilter !== "ALL") {
+      if (vacancyFilter) {
         params.append("vacancyId", vacancyFilter);
       }
 
@@ -375,7 +375,7 @@ export default function QuestionsPage() {
                 <SelectValue placeholder="Filter by vacancy" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Vacancies</SelectItem>
+                <SelectItem value="">All Vacancies</SelectItem>
                 {vacancies.map((vacancy) => (
                   <SelectItem key={vacancy.id} value={vacancy.id.toString()}>
                     {vacancy.title}
