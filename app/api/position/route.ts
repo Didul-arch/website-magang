@@ -98,9 +98,6 @@ export async function GET(request: Request) {
         skip,
         take: limit,
         where,
-        include: {
-          vacancy: true, // Include related vacancies if needed
-        },
         orderBy: {
           createdAt: "desc",
         },

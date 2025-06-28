@@ -120,7 +120,7 @@ export default function AdminPage() {
           {/* Search Input */}
           <div className="mb-4 flex items-center gap-2">
             <Input
-              placeholder="BELOM SELESAI FITURNYA..."
+              placeholder="Cari jabatan atau deskripsi..."
               value={searchQuery}
               onChange={(e) => {
                 setPage(1);
