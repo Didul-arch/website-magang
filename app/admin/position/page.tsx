@@ -16,41 +16,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, Search, UserX } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import Link from "next/link";
 import axiosInstance from "@/lib/axios";
 
-interface User {
+interface Position {
   id: number;
-  company: string;
-  degree: string;
-  semester: number;
-  idCard: string;
-  cv: string | null;
-  portfolio: string | null;
+  title: string;
+  description: string;
   createdAt: string;
   updatedAt: string;
-  userId: string;
-  status: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    phoneNumber: string;
-    role: string;
-    createdAt: string;
-    updatedAt: string;
-  };
 }
 
 const LIMIT = 10; // Jumlah data per halaman
 
 export default function AdminPage() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
   const [page, setPage] = useState(1);
   const [maxPage, setMaxPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,38 +61,23 @@ export default function AdminPage() {
           params.append("search", debouncedSearchQuery);
         }
         const response = await axiosInstance.get(
-          `/api/internship?${params.toString()}`
+          `/api/position?${params.toString()}`
         );
 
-        const fetchedUsers: User[] = response.data.data.map((user: any) => ({
-          id: user.id,
-          company: user.company,
-          degree: user.degree,
-          semester: user.semester,
-          idCard: user.idCard,
-          cv: user.cv,
-          portfolio: user.portfolio,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-          userId: user.userId,
-          status: user.status,
-          user: {
-            id: user.user.id,
-            name: user.user.name,
-            email: user.user.email,
-            phoneNumber: user.user.phoneNumber,
-            role: user.user.role,
-            createdAt: user.user.createdAt,
-            updatedAt: user.user.updatedAt,
-          },
+        const fetchedPositions: Position[] = response.data.data.map((position: any) => ({
+            id: position.id,
+            title: position.title,
+            description: position.description,
+            createdAt: position.createdAt,
+            updatedAt: position.updatedAt,
         }));
 
-        setUsers(fetchedUsers);
+        setPositions(fetchedPositions);
 
         const total = response.data?.pagination?.totalPages || 0;
         setMaxPage(total);
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("Error fetching positions:", error);
         toast({
           variant: "destructive",
           title: "Terjadi kesalahan",
@@ -121,7 +89,7 @@ export default function AdminPage() {
     };
 
     fetchUsers();
-  }, [toast, page, debouncedSearchQuery]);
+  }, [page, debouncedSearchQuery]);
 
   // Pagination handlers
   const handlePrevPage = () => {
@@ -135,24 +103,24 @@ export default function AdminPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Manajemen Peserta</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Manajemen Position dan Vacancies</h1>
         <p className="text-muted-foreground">
-          Kelola data peserta program magang PT Mada Wikri Tunggal
+          Kelola data jabatan dan lowongan program magang PT Mada Wikri Tunggal
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Daftar Peserta</CardTitle>
+          <CardTitle>Daftar Jabatan</CardTitle>
           <CardDescription>
-            Total {users.length} peserta terdaftar
+            Total {positions.length} jabatan terdaftar
           </CardDescription>
         </CardHeader>
         <CardContent>
           {/* Search Input */}
           <div className="mb-4 flex items-center gap-2">
             <Input
-              placeholder="Cari nama, email, universitas, atau jurusan..."
+              placeholder="BELOM SELESAI FITURNYA..."
               value={searchQuery}
               onChange={(e) => {
                 setPage(1);
@@ -166,7 +134,7 @@ export default function AdminPage() {
             <div className="flex h-40 items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
             </div>
-          ) : users.length === 0 ? (
+          ) : positions.length === 0 ? (
             <div className="flex h-40 flex-col items-center justify-center space-y-2 text-center">
               <UserX className="h-10 w-10 text-muted-foreground" />
               <p className="text-muted-foreground">
@@ -180,24 +148,24 @@ export default function AdminPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nama</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Universitas</TableHead>
-                      <TableHead>Jurusan</TableHead>
+                      <TableHead>Deskripsi</TableHead>
+                      <TableHead>Created At</TableHead>
+                      <TableHead>Last Updated</TableHead>
                       <TableHead className="text-right">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id}>
+                    {positions.map((position) => (
+                      <TableRow key={position.id}>
                         <TableCell className="font-medium">
-                          {user.user?.name}
+                          {position.title}
                         </TableCell>
-                        <TableCell>{user.user?.email}</TableCell>
-                        <TableCell>{user.company}</TableCell>
-                        <TableCell>{user.degree}</TableCell>
+                        <TableCell>{position.description}</TableCell>
+                        <TableCell>{position.createdAt}</TableCell>
+                        <TableCell>{position.updatedAt}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            {/* <Link href={`/admin/users/${user.id}`}> */}
+                            {/* <Link href={`/admin/positions/${user.id}`}> */}
                             <Button variant="outline" size="icon">
                               <Eye className="h-4 w-4" />
                               <span className="sr-only">Detail</span>
