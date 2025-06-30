@@ -8,7 +8,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, TagIcon, BookCheck } from "lucide-react";
+import { LayoutDashboard, TagIcon, NotepadText, FileText } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,8 @@ import { createClient } from "@/lib/utils/supabase/client";
 const navItems = [
   { label: "User", href: "/admin", icon: LayoutDashboard },
   { label: "Position", href: "/admin/position", icon: TagIcon },
-  { label: "Question", href: "/admin/question", icon: BookCheck },
+  { label: "Questions", href: "/admin/questions", icon: NotepadText },
+  { label: "Applications", href: "/admin/applications", icon: FileText },
 ];
 
 export function AdminAppSidebar() {

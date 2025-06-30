@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useContext } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, X, User, LogOut } from "lucide-react";
+import { Menu, X, User, LogOut, LayoutDashboard } from "lucide-react";
 import { AuthContext } from "@/lib/utils/supabase/provider";
 import { useFetchData } from "@/hooks/useApi";
 import axiosInstance from "@/lib/axios";
@@ -29,9 +29,11 @@ interface UserData {
 export default function Header() {
   const { user, loading } = useContext(AuthContext);
   const [userData, setUserData] = useState<UserData | null>(null);
-  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  const pathname = usePathname();
+  const router = useRouter();
 
   // Fetch user data when user is available
   const { data: userApiData, isLoading: userLoading } = useFetchData<UserData>(
@@ -55,13 +57,6 @@ export default function Header() {
 
   const isActive = (path: string) => {
     return pathname === path;
-  };
-
-  const getDashboardLink = () => {
-    if (pathname.startsWith("/admin") || userData?.role === "ADMIN") {
-      return "/admin";
-    }
-    return "/dashboard";
   };
 
   const handleLogout = async () => {
@@ -103,6 +98,18 @@ export default function Header() {
             >
               Beranda
             </Link>
+            {userData && userData.role === "USER" && (
+              <Link
+                href="/my-applications"
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive("/my-applications")
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                }`}
+              >
+                My Applications
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -138,6 +145,15 @@ export default function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {userData.role === "ADMIN" && (
+                    <DropdownMenuItem
+                      onClick={() => router.push("/admin")}
+                      className="flex items-center gap-2"
+                    >
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <span>Dashboard</span>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     onClick={handleLogout}
                     className="text-red-600"
@@ -189,8 +205,19 @@ export default function Header() {
               Beranda
             </Link>
             {userData && (
-              <></>
+              <Link
+                href="/my-applications"
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive("/my-applications")
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                My Applications
+              </Link>
             )}
+            {userData && <></>}
             {userData ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2 p-2 rounded-md bg-muted">
