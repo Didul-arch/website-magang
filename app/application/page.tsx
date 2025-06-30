@@ -15,16 +15,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import Header from "@/components/header";
-import axiosInstance from "@/lib/axios";
 import { useStore } from "@/lib/stores/user.store";
-
-interface UserData {
-  id: string;
-  name: string;
-  email: string;
-  phoneNumber: string;
-  role: string;
-}
+import useApi from "@/hooks/useApi"; // Import hook yang baru
 
 interface Vacancy {
   id: number;
@@ -49,68 +41,68 @@ function ApplicationComponent() {
   const router = useRouter();
   const vacancyId = searchParams.get("vacancy");
   const user = useStore((state) => state.user);
-  const [vacancy, setVacancy] = useState<Vacancy | null>(null);
+
+  // Gunakan useApi untuk mengambil data lowongan
+  const { data: vacancy, isLoading: isLoadingVacancy, request: fetchVacancy } = useApi<Vacancy>();
+  
+  // Gunakan useApi untuk mengirim formulir
+  const { isLoading: isSubmitting, request: submitApplication } = useApi();
+
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [portoLink, setPortoLink] = useState("");
   const [alasan, setAlasan] = useState("");
-  const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch vacancy info
+  // Fetch vacancy info menggunakan useApi
   useEffect(() => {
-    const fetchVacancy = async () => {
-      if (!vacancyId) return;
-      try {
-        const res = await axiosInstance.get(`/api/vacancy/${Number(vacancyId)}`);
-        if (res.data?.data) setVacancy(res.data.data);
-      } catch {
-        setVacancy(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchVacancy();
-  }, [vacancyId]);
+    if (vacancyId) {
+      fetchVacancy({
+        method: 'GET',
+        url: `/api/vacancy/${Number(vacancyId)}`,
+      }, {
+        showToastOnError: true,
+        errorMessage: "Gagal memuat detail lowongan."
+      });
+    }
+  }, [vacancyId, fetchVacancy]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loading || isSubmitting || !user?.internship.id || !vacancyId) return; // Prevent submission while loading or if required data is missing
+    if (isSubmitting || !user?.internship?.id || !vacancyId) return;
 
     if (!cvFile || !portoLink) {
-      return toast.error("Mohon upload CV dan isi link portofolio.");
+      toast.error("Mohon unggah CV dan isi link portofolio.");
+      return;
     }
 
-    try {
-      setIsSubmitting(true);
+    const formData = new FormData();
+    formData.append("internshipId", user.internship.id.toString());
+    formData.append("vacancyId", vacancyId);
+    formData.append("cv", cvFile);
+    formData.append("portfolio", portoLink);
+    formData.append("reason", alasan);
 
-      const formData = new FormData();
-      formData.append("internshipId", user.internship.id?.toString());
-      formData.append("vacancyId", vacancyId);
-      formData.append("cv", cvFile);
-      formData.append("portfolio", portoLink);
-      formData.append("reason", alasan);
-      const response = await axiosInstance.post("/api/vacancy/apply", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+    const { data: responseData } = await submitApplication({
+      method: 'POST',
+      url: '/api/vacancy/apply',
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }, {
+      showToastOnSuccess: true,
+      successMessage: "Lamaran berhasil dikirim! Anda akan diarahkan ke halaman tes.",
+    });
 
-      if (!response.status?.toString()?.startsWith("2")) {
-        throw new Error(response.data?.message || "Gagal mengirim lamaran");
-      }
+    if (responseData) {
+      const applicationId = (responseData as any)?.id;
       setSubmitted(true);
-      toast.success("Lamaran berhasil dikirim! Akan diarahkan ke halaman tes.");
-      setTimeout(() => router.push("/"), 1500);
-    } catch (err) {
-      console.error("Error submitting application:", err);
-      if (err instanceof Error) {
-        toast.error(err.message || "Terjadi kesalahan saat mengirim lamaran.");
-        return;
+      if (applicationId) {
+        setTimeout(() => router.push(`/application/pre-test?id=${applicationId}`), 1500);
+      } else {
+        // Fallback jika tidak ada application ID
+        setTimeout(() => router.push("/"), 1500);
       }
-      toast.error("Terjadi kesalahan saat mengirim lamaran.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -172,10 +164,9 @@ function ApplicationComponent() {
                     type="file"
                     accept=".pdf"
                     onChange={e => setCvFile(e.target.files?.[0] || null)}
-                    disabled={loading || isSubmitting}
+                    disabled={isLoadingVacancy || isSubmitting}
                     required
                   />
-                  <span className="text-xs text-muted-foreground">File akan disimpan di folder <b>cv</b> pada bucket <b>all</b>.</span>
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium">Link Portofolio</label>
@@ -184,7 +175,7 @@ function ApplicationComponent() {
                     placeholder="https://website-portofolio.com"
                     value={portoLink}
                     onChange={e => setPortoLink(e.target.value)}
-                    disabled={loading || isSubmitting}
+                    disabled={isLoadingVacancy || isSubmitting}
                     required
                   />
                   <span className="text-xs text-muted-foreground">Masukkan link website portofolio Anda.</span>
@@ -194,14 +185,14 @@ function ApplicationComponent() {
                   <Textarea
                     value={alasan}
                     onChange={e => setAlasan(e.target.value)}
-                    disabled={loading || isSubmitting}
+                    disabled={isLoadingVacancy || isSubmitting}
                     required
                     placeholder="Ceritakan motivasi Anda..."
                   />
                 </div>
                 <CardFooter className="p-0 pt-2">
-                  <Button type="submit" className="w-full" disabled={loading || isSubmitting}>
-                    Kirim Lamaran
+                  <Button type="submit" className="w-full" disabled={isLoadingVacancy || isSubmitting}>
+                    {isSubmitting ? 'Mengirim...' : 'Kirim Lamaran'}
                   </Button>
                 </CardFooter>
               </form>

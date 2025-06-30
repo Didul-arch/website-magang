@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import { useStore } from "@/lib/stores/user.store";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,15 +16,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import Header from "@/components/header";
-import { useSubmitData } from "@/hooks/useApi";
+import useApi from "@/hooks/useApi"; // Menggunakan hook yang sudah direfaktor
 import {
   ArrowRight,
   Award,
@@ -49,37 +45,71 @@ interface Vacancy {
 }
 
 export default function Home() {
-  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTitle, setSearchTitle] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
-  const { submitData } = useSubmitData<{ data: Vacancy[] }>();
+  const [checkingVacancyId, setCheckingVacancyId] = useState<number | null>(null);
 
-  // Fetch vacancies
-  const fetchVacancies = async (filters = {}) => {
-    setLoading(true);
-    try {
-      const response = await submitData("/api/vacancy/list", "post", filters);
-      if (response?.data) {
-        setVacancies(response.data);
-      }
-    } catch (error) {
-      console.error("Error fetching vacancies:", error);
-      setVacancies([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const router = useRouter();
+  const user = useStore((state) => state.user);
 
+  // Hook untuk mengambil daftar lowongan
+  const { data: vacancies, isLoading: isLoadingVacancies, request: fetchVacanciesApi } = useApi<Vacancy[]>();
+  
+  // Hook untuk memeriksa status lamaran
+  const { isLoading: isCheckingStatus, request: checkStatusApi } = useApi();
+
+  // Fungsi untuk mengambil lowongan dengan filter
+  const fetchVacancies = useCallback((filters = {}) => {
+    fetchVacanciesApi({
+      method: 'POST',
+      url: '/api/vacancy/list',
+      data: filters,
+    });
+  }, [fetchVacanciesApi]);
+
+  // Mengambil data lowongan saat komponen pertama kali dimuat
   useEffect(() => {
     fetchVacancies();
-  }, []);
+  }, [fetchVacancies]);
 
   const handleSearch = () => {
     const filters: any = {};
     if (searchTitle) filters.title = searchTitle;
     if (searchLocation) filters.location = searchLocation;
     fetchVacancies(filters);
+  };
+
+  const handleApplyClick = async (vacancyId: number) => {
+    if (!user) {
+      toast.error("Silakan login terlebih dahulu untuk melamar.");
+      router.push("/login");
+      return;
+    }
+
+    setCheckingVacancyId(vacancyId);
+
+    await checkStatusApi({
+      method: 'GET',
+      url: `/api/application/status?vacancyId=${vacancyId}`,
+    }, {
+      showToastOnError: true, // Tampilkan toast jika ada error
+      onSuccess: (data) => {
+        const { status, applicationId } = data as any;
+        if (status === "PENDING_TEST") {
+          toast.info("Anda sudah melamar, mengarahkan ke halaman tes.");
+          router.push(`/test?id=${applicationId}`);
+        } else if (status === "COMPLETED") {
+          toast.success("Anda sudah menyelesaikan tes untuk lowongan ini.");
+        } else { // NOT_APPLIED
+          router.push(`/application?vacancy=${vacancyId}`);
+        }
+      },
+      onError: () => {
+        // Toast error sudah ditangani oleh hook, bisa tambahkan logic lain jika perlu
+      }
+    });
+
+    setCheckingVacancyId(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -179,7 +209,7 @@ export default function Home() {
             </div>
 
             {/* Vacancy Cards */}
-            {loading ? (
+            {isLoadingVacancies ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {[...Array(6)].map((_, i) => (
                   <Card key={i} className="animate-pulse">
@@ -196,7 +226,7 @@ export default function Home() {
                   </Card>
                 ))}
               </div>
-            ) : vacancies.length > 0 ? (
+            ) : vacancies && vacancies.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {vacancies.map((vacancy) => (
                   <Card
@@ -243,15 +273,16 @@ export default function Home() {
                           </div>
                         </div>
                       </div>
-                      <Link
-                        href={`/application?vacancy=${vacancy.id}`}
-                        className="w-full"
+                      <Button
+                        className="w-full group-hover:bg-primary/90 transition-colors gap-2"
+                        onClick={() => handleApplyClick(vacancy.id)}
+                        disabled={isCheckingStatus && checkingVacancyId === vacancy.id}
                       >
-                        <Button className="w-full group-hover:bg-primary/90 transition-colors gap-2">
-                          <Users className="h-4 w-4" />
-                          Daftar Sekarang
-                        </Button>
-                      </Link>
+                        <Users className="h-4 w-4" />
+                        {isCheckingStatus && checkingVacancyId === vacancy.id
+                          ? "Memeriksa..."
+                          : "Daftar Sekarang"}
+                      </Button>
                     </CardFooter>
                   </Card>
                 ))}

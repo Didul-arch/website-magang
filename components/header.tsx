@@ -16,8 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Menu, X, User, LogOut, LayoutDashboard } from "lucide-react";
 import { AuthContext } from "@/lib/utils/supabase/provider";
-import { useFetchData } from "@/hooks/useApi";
-import axiosInstance from "@/lib/axios";
+import useApi from "@/hooks/useApi";
 
 interface UserData {
   id: string;
@@ -27,24 +26,21 @@ interface UserData {
 }
 
 export default function Header() {
-  const { user, loading } = useContext(AuthContext);
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const { user } = useContext(AuthContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   const pathname = usePathname();
   const router = useRouter();
 
-  // Fetch user data when user is available
-  const { data: userApiData, isLoading: userLoading } = useFetchData<UserData>(
-    user ? "/api/auth/me" : null
-  );
+  const { data: userData, request: fetchUserData } = useApi<UserData>();
+  const { request: logoutUser } = useApi();
 
   useEffect(() => {
-    if (userApiData) {
-      setUserData(userApiData);
+    if (user) {
+      fetchUserData({ method: "get", url: "/api/auth/me" });
     }
-  }, [userApiData]);
+  }, [user, fetchUserData]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -60,15 +56,14 @@ export default function Header() {
   };
 
   const handleLogout = async () => {
-    try {
-      await axiosInstance.post("/api/auth/logout");
+    const result = await logoutUser({ method: "post", url: "/api/auth/logout" });
+    if (result.data) {
       window.location.href = "/";
-    } catch (error) {
-      console.error("Error logging out:", error);
     }
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string) => {
+    if (!name) return "";
     return name
       .split(" ")
       .map((n) => n[0])
@@ -98,170 +93,121 @@ export default function Header() {
             >
               Beranda
             </Link>
-            {userData && userData.role === "USER" && (
-              <Link
-                href="/my-applications"
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  isActive("/my-applications")
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                }`}
-              >
-                My Applications
-              </Link>
-            )}
+            <Link
+              href="/application"
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                isActive("/application")
+                  ? "text-primary"
+                  : "text-muted-foreground"
+              }`}
+            >
+              Lamaran
+            </Link>
           </nav>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-4">
-            {userData ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="relative h-8 w-8 rounded-full"
-                  >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage
-                        src="/placeholder-user.jpg"
-                        alt={userData.name}
-                      />
-                      <AvatarFallback>
-                        {getInitials(userData.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {userData.name}
-                      </p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {userData.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {userData.role === "ADMIN" && (
-                    <DropdownMenuItem
-                      onClick={() => router.push("/admin")}
-                      className="flex items-center gap-2"
-                    >
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      <span>Dashboard</span>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="text-red-600"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">
-                    Login
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button size="sm">Daftar</Button>
-                </Link>
-              </>
-            )}
-          </div>
           <ModeToggle />
-          <button
-            className="flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground md:hidden"
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Avatar className="cursor-pointer">
+                  <AvatarImage src="/placeholder-user.jpg" />
+                  <AvatarFallback>{getInitials(userData?.name)}</AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{userData?.name}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {userData?.role === "admin" && (
+                  <DropdownMenuItem onClick={() => router.push("/admin")}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => router.push("/profile")}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="hidden md:flex items-center gap-2">
+              <Button variant="outline" asChild>
+                <Link href="/login">Login</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/register">Register</Link>
+              </Button>
+            </div>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            <span className="sr-only">Toggle menu</span>
-            {isMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
+            {isMenuOpen ? <X /> : <Menu />}
+          </Button>
         </div>
       </div>
-
-      {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="md:hidden">
-          <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
+        <div className="md:hidden bg-background/95 pb-4">
+          <nav className="container flex flex-col gap-4">
             <Link
               href="/"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive("/") ? "text-primary" : "text-muted-foreground"
-              }`}
+              className="text-sm font-medium text-muted-foreground"
               onClick={() => setIsMenuOpen(false)}
             >
               Beranda
             </Link>
-            {userData && (
-              <Link
-                href="/my-applications"
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  isActive("/my-applications")
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                My Applications
-              </Link>
-            )}
-            {userData && <></>}
-            {userData ? (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 p-2 rounded-md bg-muted">
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage
-                      src="/placeholder-user.jpg"
-                      alt={userData.name}
-                    />
-                    <AvatarFallback className="text-xs">
-                      {getInitials(userData.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-medium">{userData.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {userData.email}
-                    </p>
-                  </div>
+            <Link
+              href="/application"
+              className="text-sm font-medium text-muted-foreground"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Lamaran
+            </Link>
+            {user ? (
+              <>
+                <div className="border-t pt-4 mt-2 flex flex-col gap-4">
+                  {userData?.role === "admin" && (
+                    <Link
+                      href="/admin"
+                      className="text-sm font-medium text-muted-foreground"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                  )}
+                  <Link
+                    href="/profile"
+                    className="text-sm font-medium text-muted-foreground"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Profile
+                  </Link>
+                  <Button variant="ghost" onClick={handleLogout} className="justify-start p-0">
+                    Logout
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="text-red-600"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
+              </>
+            ) : (
+              <div className="flex flex-col gap-2 border-t pt-4 mt-2">
+                <Button variant="outline" asChild>
+                  <Link href="/login">Login</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/register">Register</Link>
                 </Button>
               </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <Link href="/login" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Login
-                  </Button>
-                </Link>
-                <Link href="/register" onClick={() => setIsMenuOpen(false)}>
-                  <Button size="sm" className="w-full">
-                    Daftar
-                  </Button>
-                </Link>
-              </div>
             )}
-          </div>
+          </nav>
         </div>
       )}
     </header>

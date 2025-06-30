@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 const submitAnswersSchema = z.object({
   answers: z.array(
@@ -20,6 +20,9 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const { user, error } = await getAuthenticatedUser();
+    if (error) return error;
+
     const applicationId = parseInt(params.id);
     const body = await request.json();
     const parsedBody = submitAnswersSchema.safeParse(body);
@@ -32,16 +35,6 @@ export async function POST(
         },
         { status: 400 }
       );
-    }
-
-    // Get current user from Supabase
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     // Get application and verify ownership
@@ -77,95 +70,79 @@ export async function POST(
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    // Check if already answered
-    if (application.ApplicantAnswer.length > 0) {
+    // Check if test was already submitted
+    if (application.testSubmittedAt) {
       return NextResponse.json(
-        { message: "Questions already answered" },
+        { message: "Test already submitted" },
         { status: 400 }
       );
     }
 
-    // Validate all answers belong to the vacancy's questions
-    const questionIds = application.Vacancy?.questions.map((q) => q.id) || [];
-    const submittedQuestionIds = parsedBody.data.answers.map(
-      (a) => a.questionId
-    );
-
-    const invalidQuestions = submittedQuestionIds.filter(
-      (id) => !questionIds.includes(id)
-    );
-    if (invalidQuestions.length > 0) {
-      return NextResponse.json(
-        { message: "Invalid questions submitted" },
-        { status: 400 }
-      );
-    }
-
-    // Validate answer IDs belong to their respective questions
-    for (const answerData of parsedBody.data.answers) {
-      const question = application.Vacancy?.questions.find(
-        (q) => q.id === answerData.questionId
-      );
-      const validAnswerIds = question?.answers.map((a) => a.id) || [];
-
-      if (!validAnswerIds.includes(answerData.answerId)) {
-        return NextResponse.json(
-          { message: "Invalid answer ID for question" },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Create applicant answers
-    const applicantAnswers = await Promise.all(
-      parsedBody.data.answers.map(async (answerData) => {
-        return await prisma.applicantAnswer.create({
-          data: {
-            applicationId,
+    // Create applicant answers, update application, and create notification in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Calculate score
+      let correctAnswersCount = 0;
+      for (const answerData of parsedBody.data.answers) {
+        const correctAnswer = await tx.answer.findFirst({
+          where: {
+            id: answerData.answerId,
             questionId: answerData.questionId,
-            answerId: answerData.answerId,
-          },
-          include: {
-            question: true,
-            answer: true,
+            isCorrect: true,
           },
         });
-      })
-    );
+        if (correctAnswer) {
+          correctAnswersCount++;
+        }
+      }
 
-    // Calculate score
-    const correctAnswers = applicantAnswers.filter(
-      (aa) => aa.answer?.isCorrect
-    );
-    const score = (correctAnswers.length / applicantAnswers.length) * 100;
+      const totalQuestions = application.Vacancy?.questions.length || 0;
+      const score =
+        totalQuestions > 0 ? (correctAnswersCount / totalQuestions) * 100 : 0;
 
-    // Update application status
-    await prisma.application.update({
-      where: { id: applicationId },
-      data: {
-        status: "REVIEWED",
-      },
-    });
+      // 1. Create ApplicantAnswer records
+      await tx.applicantAnswer.createMany({
+        data: parsedBody.data.answers.map((answerData) => ({
+          applicationId,
+          questionId: answerData.questionId,
+          answerId: answerData.answerId,
+        })),
+      });
 
-    // Create notification
-    await prisma.notification.create({
-      data: {
-        title: "Quiz Completed",
-        message: `You have completed the quiz for ${
-          application.Vacancy?.title
-        }. Your score: ${score.toFixed(1)}%`,
-        userId: user.id,
-      },
+      // 2. Update the application with the score and submission timestamp
+      const updatedApplication = await tx.application.update({
+        where: { id: applicationId },
+        data: {
+          score: score,
+          testSubmittedAt: new Date(),
+          status: "PENDING", // Or another appropriate status
+        },
+      });
+
+      // 3. Create a notification for the user
+      await tx.notification.create({
+        data: {
+          title: "Tes Selesai",
+          message: `Anda telah menyelesaikan tes untuk posisi ${
+            application.Vacancy?.title
+          }. Skor Anda: ${score.toFixed(2)}`,
+          userId: user.id,
+        },
+      });
+
+      return {
+        score,
+        totalQuestions,
+        correctAnswers: correctAnswersCount,
+      };
     });
 
     return NextResponse.json(
       {
         message: "Answers submitted successfully",
         data: {
-          answers: applicantAnswers,
-          score: score.toFixed(1),
-          totalQuestions: applicantAnswers.length,
-          correctAnswers: correctAnswers.length,
+          score: result.score.toFixed(2),
+          totalQuestions: result.totalQuestions,
+          correctAnswers: result.correctAnswers,
         },
       },
       { status: 201 }

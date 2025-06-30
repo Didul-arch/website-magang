@@ -1,50 +1,48 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 /**
  * Get questions for a specific application (for internship applicants)
+ * or check if the test has already been completed.
  */
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    const { user, error } = await getAuthenticatedUser();
+    if (error) return error;
+
     const applicationId = parseInt(params.id);
 
-    // Get current user from Supabase
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    // Get application with vacancy and questions
+    // Get application details
     const application = await prisma.application.findUnique({
       where: { id: applicationId },
-      include: {
+      select: {
+        testSubmittedAt: true,
+        score: true,
         internship: {
-          include: {
-            user: true,
+          select: {
+            userId: true,
           },
         },
         Vacancy: {
-          include: {
+          select: {
+            title: true,
             questions: {
-              include: {
-                answers: true,
+              select: {
+                id: true,
+                question: true,
+                answers: {
+                  select: {
+                    id: true,
+                    answer: true,
+                  },
+                },
               },
               orderBy: { createdAt: "asc" },
             },
-          },
-        },
-        ApplicantAnswer: {
-          include: {
-            question: true,
-            answer: true,
           },
         },
       },
@@ -58,46 +56,37 @@ export async function GET(
     }
 
     // Verify user owns this application
-    if (application.internship?.user?.id !== user.id) {
+    if (application.internship?.userId !== user.id) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    // Check if questions are already answered
-    const hasAnswered = application.ApplicantAnswer.length > 0;
-
-    // If questions are answered, calculate the score
-    let score = null;
-    if (hasAnswered) {
-      const correctAnswers = application.ApplicantAnswer.filter(
-        (aa) => aa.answer?.isCorrect
-      ).length;
-      const totalQuestions = application.ApplicantAnswer.length;
-      score = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+    // If test has been submitted, return the result
+    if (application.testSubmittedAt) {
+      return NextResponse.json({
+        message: "Test already completed",
+        data: {
+          hasAnswered: true,
+          score: application.score,
+          vacancyTitle: application.Vacancy?.title,
+        },
+      });
     }
 
-    return NextResponse.json(
-      {
-        message: "Questions fetched successfully",
-        data: {
-          application: {
-            id: application.id,
-            status: application.status,
-            vacancyTitle: application.Vacancy?.title,
-          },
-          questions: application.Vacancy?.questions || [],
-          hasAnswered,
-          score: score ? score.toFixed(1) : null,
-          answers: hasAnswered ? application.ApplicantAnswer : [],
-        },
+    // If test has not been submitted, return the questions
+    return NextResponse.json({
+      message: "Questions fetched successfully",
+      data: {
+        hasAnswered: false,
+        questions: application.Vacancy?.questions || [],
+        vacancyTitle: application.Vacancy?.title,
       },
-      { status: 200 }
-    );
-  } catch (error) {
+    });
+  } catch (error: any) {
     console.error("Error fetching questions:", error);
     return NextResponse.json(
       {
         message: "Failed to fetch questions",
-        error,
+        error: error.message,
       },
       { status: 500 }
     );

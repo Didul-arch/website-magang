@@ -74,6 +74,8 @@ model Application {
   cv            String?
   portfolio     String?
   reason        String?
+  score         Int?
+  testSubmittedAt DateTime?
   createdAt     DateTime    @default(now()) @map(name: "created_at")
   updatedAt     DateTime    @updatedAt @map(name: "updated_at")
   internship    Internship? @relation(fields: [internshipId], references: [id])
