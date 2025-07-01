@@ -93,16 +93,6 @@ export default function Header() {
             >
               Beranda
             </Link>
-            <Link
-              href="/application"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive("/application")
-                  ? "text-primary"
-                  : "text-muted-foreground"
-              }`}
-            >
-              Lamaran
-            </Link>
           </nav>
         </div>
 
@@ -165,13 +155,6 @@ export default function Header() {
               onClick={() => setIsMenuOpen(false)}
             >
               Beranda
-            </Link>
-            <Link
-              href="/application"
-              className="text-sm font-medium text-muted-foreground"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Lamaran
             </Link>
             {user ? (
               <>

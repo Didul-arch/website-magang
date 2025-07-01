@@ -1,35 +1,24 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 import prisma from "@/lib/prisma";
 import { createClient } from "@/lib/utils/supabase/server";
 import { getApplicationConfirmationTemplate, sendEmail } from "@/lib/email";
 
-// Define schema for application form
-const applicationFormSchema = z.object({
-  internshipId: z.string().or(z.number()).transform(Number),
-  vacancyId: z.string().or(z.number()).transform(Number),
-  cv: z.instanceof(File).optional(),
-  portfolio: z.string().optional(),
-  reason: z.string().optional(),
-});
-
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
-    const body: any = {};
-    formData.forEach((value, key) => {
-      body[key] = value;
-    });
 
-    // Validate the form data
-    const parsedBody = applicationFormSchema.safeParse(body);
+    const internshipId = formData.get("internshipId");
+    const vacancyId = formData.get("vacancyId");
+    const cv = formData.get("cv") as File | null;
+    const portfolio = formData.get("portfolio") as string | null;
+    const reason = formData.get("reason") as string | null;
 
-    if (!parsedBody.success) {
+    // Basic validation
+    if (!internshipId || !vacancyId || !cv || !portfolio) {
       return NextResponse.json(
         {
-          message: "Invalid application data",
-          errors: parsedBody.error.flatten(),
+          message: "Missing required fields",
         },
         {
           status: 400,
@@ -37,15 +26,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const { internshipId, vacancyId, cv, portfolio } = parsedBody.data;
+    const numericInternshipId = Number(internshipId);
+    const numericVacancyId = Number(vacancyId);
 
     // Verify that the internship and vacancy exist
     const internship = await prisma.internship.findUnique({
-      where: { id: internshipId },
+      where: { id: numericInternshipId },
     });
 
     const vacancy = await prisma.vacancy.findUnique({
-      where: { id: vacancyId },
+      where: { id: numericVacancyId },
       include: {
         position: {
           select: {
@@ -81,8 +71,8 @@ export async function POST(request: Request) {
     // Check if user has already applied to this vacancy
     const existingApplication = await prisma.application.findFirst({
       where: {
-        internshipId: internshipId,
-        vacancyId: vacancyId,
+        internshipId: numericInternshipId,
+        vacancyId: numericVacancyId,
       },
     });
 
@@ -133,8 +123,9 @@ export async function POST(request: Request) {
         status: "PENDING",
         cv: cvUrl,
         portfolio: portfolio,
-        internshipId: internshipId,
-        vacancyId: vacancyId,
+        reason: reason,
+        internshipId: numericInternshipId,
+        vacancyId: numericVacancyId,
       },
     });
 
