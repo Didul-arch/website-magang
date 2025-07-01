@@ -97,7 +97,7 @@ function ApplicationComponent() {
     if (responseData) {
       const applicationId = (responseData as any)?.id;
       setSubmitted(true);
-        setTimeout(() => router.push(`/application/test?id=${applicationId}`), 1500);
+        setTimeout(() => router.push(`/application/test?id=${applicationId}`), 5000);
     }
   };
 
