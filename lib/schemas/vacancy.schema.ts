@@ -5,7 +5,7 @@ const vacancyFormSchema = z.object({
   description: z.string().min(1, { message: "Description is required" }),
   thumbnail: z.string().optional(),
   location: z.enum(["REMOTE", "ONSITE", "HYBRID"]),
-  status: z.enum(["OPEN", "CLOSED"]).default("OPEN"),
+  status: z.enum(["OPEN", "CLOSED"]), // Removed .default("OPEN")
   startDate: z.string().refine(
     (date) => {
       const d = new Date(date);
@@ -35,7 +35,7 @@ const updateVacancyFormSchema = z.object({
     .optional(),
   thumbnail: z.string().optional(),
   location: z.enum(["REMOTE", "ONSITE", "HYBRID"]).optional(),
-  status: z.enum(["OPEN", "CLOSED"]).default("OPEN").optional(),
+  status: z.enum(["OPEN", "CLOSED"]).optional(), // Removed .default("OPEN")
   startDate: z
     .string()
     .refine(
@@ -63,4 +63,8 @@ const updateVacancyFormSchema = z.object({
   positionId: z.number().optional(),
 });
 
+// Define the type based on the schema inference
+type VacancyFormValues = z.infer<typeof vacancyFormSchema>;
+
 export { vacancyFormSchema, updateVacancyFormSchema };
+export type { VacancyFormValues }; // Export the type

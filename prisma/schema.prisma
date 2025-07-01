@@ -50,13 +50,24 @@ model Position {
   @@map(name: "positions")
 }
 
+enum VacancyLocation {
+  ONSITE
+  REMOTE
+  HYBRID
+}
+
+enum VacancyStatus {
+  OPEN
+  CLOSED
+}
+
 model Vacancy {
   id            Int         @id @default(autoincrement())
   title         String
   description   String
   thumbnail     String?
-  location      String
-  status        String      @default("OPEN")
+  location      VacancyLocation
+  status        VacancyStatus      @default(OPEN)
   startDate     DateTime    @map(name: "start_date")
   endDate       DateTime    @map(name: "end_date")
   createdAt     DateTime    @default(now()) @map(name: "created_at")

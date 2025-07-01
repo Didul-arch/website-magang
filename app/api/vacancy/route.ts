@@ -67,11 +67,12 @@ export async function POST(request: Request) {
         status: 201,
       }
     );
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Error creating vacancy:", error);
     return NextResponse.json(
       {
         message: "Error creating vacancy",
-        error,
+        error: error.message || "An unknown error occurred",
       },
       {
         status: 500,
