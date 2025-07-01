@@ -8,58 +8,86 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const vacancyId = searchParams.get("vacancyId");
-
-  if (!vacancyId) {
-    return NextResponse.json(
-      { message: "Vacancy ID is required" },
-      { status: 400 }
-    );
-  }
+  const applicationId = searchParams.get("id"); // from test page
 
   try {
-    // 1. Get the internshipId for the current user
     const internship = await prisma.internship.findUnique({
-      where: {
-        userId: user.id,
-      },
-      select: {
-        id: true,
-      },
+      where: { userId: user.id },
+      select: { id: true },
     });
 
-    // If user has no internship profile, they couldn't have applied.
     if (!internship) {
-      return NextResponse.json({ status: "NOT_APPLIED" });
+      return NextResponse.json(
+        {
+          data: {
+            canTakeTest: false,
+            message: "Profil magang tidak ditemukan.",
+            status: "ERROR",
+          },
+        },
+        { status: 404 }
+      );
     }
 
-    // 2. Check for an existing application
-    const application = await prisma.application.findFirst({
-      where: {
-        internshipId: internship.id,
-        vacancyId: parseInt(vacancyId),
-      },
-      select: {
-        id: true,
-        testSubmittedAt: true,
-      },
-    });
-
-    if (!application) {
-      return NextResponse.json({ status: "NOT_APPLIED" });
-    }
-
-    if (application.testSubmittedAt) {
-      return NextResponse.json({ status: "COMPLETED" });
-    } else {
-      return NextResponse.json({
-        status: "PENDING_TEST",
-        applicationId: application.id,
+    // Scenario 1: Checking status for the test page (using applicationId)
+    if (applicationId) {
+      const application = await prisma.application.findFirst({
+        where: {
+          id: parseInt(applicationId),
+          internshipId: internship.id, // Security check
+        },
       });
+
+      if (!application) {
+        return NextResponse.json({
+          data: { canTakeTest: false, message: "Lamaran tidak ditemukan." },
+        });
+      }
+
+      if (application.testSubmittedAt) {
+        return NextResponse.json({
+          data: {
+            canTakeTest: false,
+            message: "Anda sudah pernah mengerjakan tes untuk lamaran ini.",
+          },
+        });
+      }
+
+      return NextResponse.json({ data: { canTakeTest: true } });
     }
-  } catch (error: any) {
-    console.error("Failed to check application status:", error);
+
+    // Scenario 2: Checking status from home page (using vacancyId)
+    if (vacancyId) {
+      const application = await prisma.application.findFirst({
+        where: {
+          internshipId: internship.id,
+          vacancyId: parseInt(vacancyId),
+        },
+        select: { id: true, testSubmittedAt: true },
+      });
+
+      if (!application) {
+        return NextResponse.json({ data: { status: "NOT_APPLIED" } });
+      }
+
+      if (application.testSubmittedAt) {
+        return NextResponse.json({ data: { status: "COMPLETED" } });
+      } else {
+        return NextResponse.json({
+          data: { status: "PENDING_TEST", applicationId: application.id },
+        });
+      }
+    }
+
+    // If neither ID is provided
     return NextResponse.json(
-      { message: "Failed to check application status", error: error.message },
+      { data: { message: "Vacancy ID or Application ID is required" } },
+      { status: 400 }
+    );
+  } catch (err: any) {
+    console.error("Failed to check application status:", err);
+    return NextResponse.json(
+      { data: { message: "Failed to check application status", error: err.message } },
       { status: 500 }
     );
   }

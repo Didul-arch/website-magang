@@ -1,21 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-
-interface Answer {
-  id: number;
-  answer: string;
-}
+import useApi from "@/hooks/useApi";
+import { useEffect, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface Question {
   id: number;
   question: string;
-  answers: Answer[];
+  answers: {
+    id: number;
+    answer: string;
+  }[];
 }
 
 export default function TestPage() {
@@ -28,50 +37,48 @@ export default function TestPage() {
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
   const [submitting, setSubmitting] = useState(false);
   const [testStatus, setTestStatus] = useState<"LOADING" | "NOT_STARTED" | "COMPLETED" | "INVALID">("LOADING");
-  const [score, setScore] = useState<number | null>(null);
   const [vacancyTitle, setVacancyTitle] = useState<string>("");
+  const [sopConfirmed, setSopConfirmed] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  // New: check eligibility before fetching questions
   useEffect(() => {
-    if (!applicationId) {
-      setTestStatus("INVALID");
-      return;
-    }
-    fetchStatusAndQuestions();
+    const checkStatus = async () => {
+      if (!applicationId) {
+        setTestStatus("INVALID");
+        return;
+      }
+      try {
+        // 1. Check eligibility
+        const statusRes = await fetch(`/api/application/status?id=${applicationId}`);
+        const statusJson = await statusRes.json();
+        const statusData = statusJson.data;
+        if (!statusRes.ok || !statusData?.canTakeTest) {
+          setTestStatus("INVALID");
+          toast({ title: "Error", description: statusData?.message || "You are not eligible to take this test.", variant: "destructive" });
+          return;
+        }
+        // 2. Fetch questions
+        const res = await fetch(`/api/application/${applicationId}/questions`);
+        const data = await res.json();
+        if (!res.ok || !data.data?.questions) {
+          setTestStatus("INVALID");
+          toast({ title: "Error", description: data.message || "Could not load the test.", variant: "destructive" });
+          return;
+        }
+        setVacancyTitle(data.data.vacancyTitle || "");
+        if (data.data.hasAnswered) {
+          setTestStatus("COMPLETED");
+        } else {
+          setTestStatus("NOT_STARTED");
+          setQuestions(data.data.questions || []);
+        }
+      } catch (error) {
+        setTestStatus("INVALID");
+        toast({ title: "Error", description: "Could not load the test. The application might be invalid.", variant: "destructive" });
+      }
+    };
+    checkStatus();
   }, [applicationId]);
-
-  const fetchStatusAndQuestions = async () => {
-    try {
-      // 1. Check eligibility
-      const statusRes = await fetch(`/api/application/status?id=${applicationId}`);
-      const statusJson = await statusRes.json();
-      const statusData = statusJson.data;
-      if (!statusRes.ok || !statusData?.canTakeTest) {
-        setTestStatus("INVALID");
-        toast({ title: "Error", description: statusData?.message || "You are not eligible to take this test.", variant: "destructive" });
-        return;
-      }
-      // 2. Fetch questions
-      const res = await fetch(`/api/application/${applicationId}/questions`);
-      const data = await res.json();
-      if (!res.ok || !data.data?.questions) {
-        setTestStatus("INVALID");
-        toast({ title: "Error", description: data.message || "Could not load the test.", variant: "destructive" });
-        return;
-      }
-      setVacancyTitle(data.data.vacancyTitle || "");
-      if (data.data.hasAnswered) {
-        setTestStatus("COMPLETED");
-        setScore(data.data.score);
-      } else {
-        setTestStatus("NOT_STARTED");
-        setQuestions(data.data.questions || []);
-      }
-    } catch (error) {
-      setTestStatus("INVALID");
-      toast({ title: "Error", description: "Could not load the test. The application might be invalid.", variant: "destructive" });
-    }
-  };
 
   const handleSelect = (questionId: number, answerId: number) => {
     setSelectedAnswers((prev) => ({ ...prev, [questionId]: answerId }));
@@ -98,7 +105,6 @@ export default function TestPage() {
       const data = await res.json();
       if (res.ok) {
         toast({ title: "Success", description: "Test submitted!" });
-        setScore(parseFloat(data.data?.score));
         setTestStatus("COMPLETED");
       } else {
         toast({ title: "Error", description: data.message, variant: "destructive" });
@@ -128,8 +134,19 @@ export default function TestPage() {
           {testStatus === "COMPLETED" ? (
             <div className="py-8 text-center">
               <div className="text-2xl font-bold mb-2">Test Completed</div>
-              {score !== null && <div className="text-lg">Your Score: {score.toFixed(2)}</div>}
+              <p className="text-muted-foreground">Your answers have been submitted successfully.</p>
               <Button className="mt-4" onClick={() => router.push("/application")}>Back to My Applications</Button>
+            </div>
+          ) : !sopConfirmed ? (
+            <div className="py-8 text-center">
+                <h2 className="text-xl font-bold mb-4">Standard Operating Procedure (SOP)</h2>
+                <div className="text-left mx-auto max-w-2xl space-y-4 mb-6 bg-muted p-4 rounded-lg">
+                    <p>1. Please ensure you have a stable internet connection before starting.</p>
+                    <p>2. Once you begin, you cannot pause or restart the test.</p>
+                    <p>3. Do not open other browser tabs or applications, as this may invalidate your session.</p>
+                    <p>4. Your final score will not be displayed. We will contact you regarding the results.</p>
+                </div>
+                <Button onClick={() => setShowConfirmDialog(true)}>I Understand, Start the Test</Button>
             </div>
           ) : questions.length === 0 ? (
             <div className="py-8 text-center">No questions are available for this position.</div>
@@ -148,7 +165,8 @@ export default function TestPage() {
                   </div>
                   <RadioGroup
                     value={selectedAnswers[q.id]?.toString() || ""}
-                    onValueChange={(val) => handleSelect(q.id, Number(val))}
+                    onValueChange={(val: string) => handleSelect(q.id, Number(val))}
+                    className="space-y-2"
                   >
                     {q.answers.map((a) => (
                       <div key={a.id} className="flex items-center gap-2">
@@ -166,6 +184,21 @@ export default function TestPage() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you ready to begin?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The test will start immediately after you continue. Make sure you are prepared.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setSopConfirmed(true); setShowConfirmDialog(false); }}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

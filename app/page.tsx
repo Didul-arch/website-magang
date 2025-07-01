@@ -97,7 +97,7 @@ export default function Home() {
         const { status, applicationId } = data as any;
         if (status === "PENDING_TEST") {
           toast.info("Anda sudah melamar, mengarahkan ke halaman tes.");
-          router.push(`/test?id=${applicationId}`);
+          router.push(`/application/test?id=${applicationId}`);
         } else if (status === "COMPLETED") {
           toast.success("Anda sudah menyelesaikan tes untuk lowongan ini.");
         } else { // NOT_APPLIED
