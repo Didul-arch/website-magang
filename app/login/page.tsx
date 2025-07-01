@@ -56,9 +56,13 @@ export default function LoginPage() {
         toast.warning(Msg, {
           data: {
             title: "Login gagal",
-            description: response.data?.error || "Silakan coba lagi.",
+            description:
+              response.data?.message ||
+              response.data?.error ||
+              "Silakan coba lagi.",
           },
         });
+        return; // Stop di sini jika gagal
       }
 
       toast.success(Msg, {
@@ -67,7 +71,7 @@ export default function LoginPage() {
           description: "Anda akan diarahkan ke beranda.",
         },
       });
-      window.location.href = "/"; 
+      window.location.href = "/";
     } catch (error: any) {
       console.error("Login error:", error);
       toast.error(Msg, {

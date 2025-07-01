@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-
 import prisma from "@/lib/prisma";
 import { registerFormSchemaBackend } from "@/lib/schemas";
 import { createClient } from "@/lib/utils/supabase/server";
@@ -40,6 +39,8 @@ export async function POST(request: Request) {
   if (idCard) {
     // add file to supabase storage bucket
     const supabase = await createClient();
+    // Hapus file lama jika sudah ada
+    await supabase.storage.from("all").remove([`id-cards/${email}`]);
     const { error } = await supabase.storage
       .from("all")
       .upload(`id-cards/${email}`, idCard);
