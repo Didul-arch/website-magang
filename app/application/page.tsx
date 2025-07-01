@@ -97,12 +97,7 @@ function ApplicationComponent() {
     if (responseData) {
       const applicationId = (responseData as any)?.id;
       setSubmitted(true);
-      if (applicationId) {
         setTimeout(() => router.push(`/application/test?id=${applicationId}`), 1500);
-      } else {
-        // Fallback jika tidak ada application ID
-        setTimeout(() => router.push("/"), 1500);
-      }
     }
   };
 

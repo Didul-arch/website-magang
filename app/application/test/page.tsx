@@ -2,7 +2,13 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import useApi from "@/hooks/useApi";
 import { useEffect, useState } from "react";
@@ -34,9 +40,13 @@ export default function TestPage() {
   const { toast } = useToast();
 
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<{
+    [key: number]: number;
+  }>({});
   const [submitting, setSubmitting] = useState(false);
-  const [testStatus, setTestStatus] = useState<"LOADING" | "NOT_STARTED" | "COMPLETED" | "INVALID">("LOADING");
+  const [testStatus, setTestStatus] = useState<
+    "LOADING" | "NOT_STARTED" | "COMPLETED" | "INVALID"
+  >("LOADING");
   const [vacancyTitle, setVacancyTitle] = useState<string>("");
   const [sopConfirmed, setSopConfirmed] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -49,12 +59,19 @@ export default function TestPage() {
       }
       try {
         // 1. Check eligibility
-        const statusRes = await fetch(`/api/application/status?id=${applicationId}`);
+        const statusRes = await fetch(
+          `/api/application/status?id=${applicationId}`
+        );
         const statusJson = await statusRes.json();
         const statusData = statusJson.data;
         if (!statusRes.ok || !statusData?.canTakeTest) {
           setTestStatus("INVALID");
-          toast({ title: "Error", description: statusData?.message || "You are not eligible to take this test.", variant: "destructive" });
+          toast({
+            title: "Error",
+            description:
+              statusData?.message || "You are not eligible to take this test.",
+            variant: "destructive",
+          });
           return;
         }
         // 2. Fetch questions
@@ -62,7 +79,11 @@ export default function TestPage() {
         const data = await res.json();
         if (!res.ok || !data.data?.questions) {
           setTestStatus("INVALID");
-          toast({ title: "Error", description: data.message || "Could not load the test.", variant: "destructive" });
+          toast({
+            title: "Error",
+            description: data.message || "Could not load the test.",
+            variant: "destructive",
+          });
           return;
         }
         setVacancyTitle(data.data.vacancyTitle || "");
@@ -74,7 +95,12 @@ export default function TestPage() {
         }
       } catch (error) {
         setTestStatus("INVALID");
-        toast({ title: "Error", description: "Could not load the test. The application might be invalid.", variant: "destructive" });
+        toast({
+          title: "Error",
+          description:
+            "Could not load the test. The application might be invalid.",
+          variant: "destructive",
+        });
       }
     };
     checkStatus();
@@ -86,42 +112,65 @@ export default function TestPage() {
 
   const handleSubmit = async () => {
     if (Object.keys(selectedAnswers).length !== questions.length) {
-      toast({ title: "Error", description: "Please answer all questions", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Please answer all questions",
+        variant: "destructive",
+      });
       return;
     }
     setSubmitting(true);
     try {
       const payload = {
-        answers: Object.entries(selectedAnswers).map(([questionId, answerId]) => ({
-          questionId: Number(questionId),
-          answerId: Number(answerId),
-        })),
+        answers: Object.entries(selectedAnswers).map(
+          ([questionId, answerId]) => ({
+            questionId: Number(questionId),
+            answerId: Number(answerId),
+          })
+        ),
       };
-      const res = await fetch(`/api/application/${applicationId}/submit-answers`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        `/api/application/${applicationId}/submit-answers`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
       const data = await res.json();
       if (res.ok) {
         toast({ title: "Success", description: "Test submitted!" });
         setTestStatus("COMPLETED");
       } else {
-        toast({ title: "Error", description: data.message, variant: "destructive" });
+        toast({
+          title: "Error",
+          description: data.message,
+          variant: "destructive",
+        });
       }
     } catch (e) {
-      toast({ title: "Error", description: "Failed to submit answers", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to submit answers",
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   if (testStatus === "LOADING") {
-    return <div className="container mx-auto p-6 text-center">Loading test...</div>;
+    return (
+      <div className="container mx-auto p-6 text-center">Loading test...</div>
+    );
   }
 
   if (testStatus === "INVALID" || !applicationId) {
-    return <div className="container mx-auto p-6 text-center text-red-600">Application not found or invalid. Please return to the dashboard.</div>;
+    return (
+      <div className="container mx-auto p-6 text-center text-red-600">
+        Application not found or invalid. Please return to the dashboard.
+      </div>
+    );
   }
 
   return (
@@ -132,24 +181,44 @@ export default function TestPage() {
         </CardHeader>
         <CardContent>
           {testStatus === "COMPLETED" ? (
-            <div className="py-8 text-center">
-              <div className="text-2xl font-bold mb-2">Test Completed</div>
-              <p className="text-muted-foreground">Your answers have been submitted successfully.</p>
-              <Button className="mt-4" onClick={() => router.push("/application")}>Back to My Applications</Button>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold">Tes Selesai</h2>
+              <p className="text-muted-foreground mt-2">
+                Jawaban Anda telah berhasil dikirim. Silakan tunggu informasi
+                selanjutnya melalui email.
+              </p>
+              <Button className="mt-4" onClick={() => router.push("/")}>
+                Kembali ke Beranda
+              </Button>
             </div>
           ) : !sopConfirmed ? (
             <div className="py-8 text-center">
-                <h2 className="text-xl font-bold mb-4">Standard Operating Procedure (SOP)</h2>
-                <div className="text-left mx-auto max-w-2xl space-y-4 mb-6 bg-muted p-4 rounded-lg">
-                    <p>1. Please ensure you have a stable internet connection before starting.</p>
-                    <p>2. Once you begin, you cannot pause or restart the test.</p>
-                    <p>3. Do not open other browser tabs or applications, as this may invalidate your session.</p>
-                    <p>4. Your final score will not be displayed. We will contact you regarding the results.</p>
-                </div>
-                <Button onClick={() => setShowConfirmDialog(true)}>I Understand, Start the Test</Button>
+              <h2 className="text-xl font-bold mb-4">
+                Standard Operating Procedure (SOP)
+              </h2>
+              <div className="text-left mx-auto max-w-2xl space-y-4 mb-6 bg-muted p-4 rounded-lg">
+                <p>
+                  1. Please ensure you have a stable internet connection before
+                  starting.
+                </p>
+                <p>2. Once you begin, you cannot pause or restart the test.</p>
+                <p>
+                  3. Do not open other browser tabs or applications, as this may
+                  invalidate your session.
+                </p>
+                <p>
+                  4. Your final score will not be displayed. We will contact you
+                  regarding the results.
+                </p>
+              </div>
+              <Button onClick={() => setShowConfirmDialog(true)}>
+                I Understand, Start the Test
+              </Button>
             </div>
           ) : questions.length === 0 ? (
-            <div className="py-8 text-center">No questions are available for this position.</div>
+            <div className="py-8 text-center">
+              No questions are available for this position.
+            </div>
           ) : (
             <form
               onSubmit={(e) => {
@@ -165,12 +234,17 @@ export default function TestPage() {
                   </div>
                   <RadioGroup
                     value={selectedAnswers[q.id]?.toString() || ""}
-                    onValueChange={(val: string) => handleSelect(q.id, Number(val))}
+                    onValueChange={(val: string) =>
+                      handleSelect(q.id, Number(val))
+                    }
                     className="space-y-2"
                   >
                     {q.answers.map((a) => (
                       <div key={a.id} className="flex items-center gap-2">
-                        <RadioGroupItem value={a.id.toString()} id={`q${q.id}_a${a.id}`} />
+                        <RadioGroupItem
+                          value={a.id.toString()}
+                          id={`q${q.id}_a${a.id}`}
+                        />
                         <label htmlFor={`q${q.id}_a${a.id}`}>{a.answer}</label>
                       </div>
                     ))}
@@ -190,12 +264,20 @@ export default function TestPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you ready to begin?</AlertDialogTitle>
             <AlertDialogDescription>
-              The test will start immediately after you continue. Make sure you are prepared.
+              The test will start immediately after you continue. Make sure you
+              are prepared.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { setSopConfirmed(true); setShowConfirmDialog(false); }}>Continue</AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => {
+                setSopConfirmed(true);
+                setShowConfirmDialog(false);
+              }}
+            >
+              Continue
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

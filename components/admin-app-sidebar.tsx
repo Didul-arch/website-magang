@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/utils/supabase/client";
 
 const navItems = [
-  { label: "User", href: "/admin", icon: LayoutDashboard },
+  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Position", href: "/admin/position", icon: TagIcon },
   { label: "Questions", href: "/admin/questions", icon: NotepadText },
   { label: "Applications", href: "/admin/applications", icon: FileText },
