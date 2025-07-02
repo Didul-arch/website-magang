@@ -22,23 +22,22 @@ export async function GET(
     const user = await prisma.user.findUnique({
       where: { id },
       include: {
-        internship: true, // Include the related internship profile
-        applications: {
+        internship: {
           include: {
-            vacancy: {
-              select: {
-                id: true,
-                title: true,
+            applications: {
+              include: {
+                Vacancy: {
+                  select: {
+                    id: true,
+                    title: true,
+                  },
+                },
+                ApplicantAnswer: true,
+              },
+              orderBy: {
+                createdAt: "desc",
               },
             },
-            _count: {
-              select: {
-                quizResults: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: "desc",
           },
         },
       },
@@ -61,19 +60,20 @@ export async function GET(
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
-      applications: user.applications.map((app: any) => ({
-        id: app.id,
-        status: app.status,
-        createdAt: app.createdAt,
-        vacancy: {
-          id: app.vacancy.id,
-          title: app.vacancy.title,
-        },
-        quiz: {
-          hasAnswered: app._count.quizResults > 0,
-          score: null, // Score calculation is complex and deferred for now
-        },
-      })),
+      applications:
+        user.internship?.applications.map((app: any) => ({
+          id: app.id,
+          status: app.status,
+          createdAt: app.createdAt,
+          vacancy: {
+            id: app.Vacancy?.id,
+            title: app.Vacancy?.title,
+          },
+          quiz: {
+            hasAnswered: app.ApplicantAnswer.length > 0,
+            score: null, // Score calculation is complex and deferred for now
+          },
+        })) || [],
     };
 
     return NextResponse.json({ data: responseData });

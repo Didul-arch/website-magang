@@ -292,7 +292,11 @@ export default function RegisterPage() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
                     {isSubmitting ? "Mendaftar..." : "Daftar"}
                   </Button>
                 </form>
@@ -302,7 +306,7 @@ export default function RegisterPage() {
               <p className="text-sm text-muted-foreground">
                 Sudah memiliki akun?{" "}
                 <Link href="/login" className="text-primary underline">
-                  Login
+                  Masuk
                 </Link>
               </p>
             </CardFooter>

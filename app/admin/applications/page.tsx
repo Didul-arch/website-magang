@@ -69,6 +69,7 @@ interface Application {
     cv: string | null;
     portfolio: string | null;
   };
+  aiRecommendationScore?: number; // Tambahan untuk AI Score
 }
 
 interface ApplicationDetails {
@@ -299,13 +300,21 @@ export default function ApplicationsPage() {
       app.vacancy.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Urutkan aplikasi berdasarkan aiRecommendationScore (descending)
+  const sortedApplications = [...filteredApplications].sort((a, b) => {
+    // Jika tidak ada skor, anggap 0
+    const scoreA = a.aiRecommendationScore ?? 0;
+    const scoreB = b.aiRecommendationScore ?? 0;
+    return scoreB - scoreA;
+  });
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Applications Management</h1>
+          <h1 className="text-3xl font-bold">Manajemen Lamaran Magang</h1>
           <p className="text-gray-600 mt-2">
-            Review internship applications and quiz results
+            Tinjau dan kelola lamaran magang serta hasil tes pelamar
           </p>
         </div>
       </div>
@@ -317,7 +326,7 @@ export default function ApplicationsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Total Applications
+                  Total Lamaran
                 </p>
                 <p className="text-2xl font-bold">{pagination.total}</p>
               </div>
@@ -330,7 +339,7 @@ export default function ApplicationsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Pending Review
+                  Menunggu Tinjauan
                 </p>
                 <p className="text-2xl font-bold">
                   {
@@ -347,9 +356,7 @@ export default function ApplicationsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Completed Quizzes
-                </p>
+                <p className="text-sm font-medium text-gray-600">Tes Selesai</p>
                 <p className="text-2xl font-bold">
                   {applications.filter((app) => app.quiz.hasAnswered).length}
                 </p>
@@ -363,7 +370,7 @@ export default function ApplicationsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Avg Quiz Score
+                  Rata-rata Skor Tes
                 </p>
                 <p className="text-2xl font-bold">
                   {applications.filter((app) => app.quiz.hasAnswered).length > 0
@@ -396,7 +403,7 @@ export default function ApplicationsPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search applications..."
+                  placeholder="Cari lamaran..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -405,22 +412,22 @@ export default function ApplicationsPage() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder="Filter berdasarkan status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Statuses</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="REVIEWED">Reviewed</SelectItem>
-                <SelectItem value="ACCEPTED">Accepted</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
+                <SelectItem value="ALL">Semua Status</SelectItem>
+                <SelectItem value="PENDING">Menunggu</SelectItem>
+                <SelectItem value="REVIEWED">Sudah Ditinjau</SelectItem>
+                <SelectItem value="ACCEPTED">Diterima</SelectItem>
+                <SelectItem value="REJECTED">Ditolak</SelectItem>
               </SelectContent>
             </Select>
             <Select value={vacancyFilter} onValueChange={setVacancyFilter}>
               <SelectTrigger className="w-64">
-                <SelectValue placeholder="Filter by vacancy" />
+                <SelectValue placeholder="Filter berdasarkan lowongan" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Vacancies</SelectItem>
+                <SelectItem value="ALL">Semua Lowongan</SelectItem>
                 {vacancies.map((vacancy) => (
                   <SelectItem key={vacancy.id} value={vacancy.id.toString()}>
                     {vacancy.title}
@@ -435,25 +442,26 @@ export default function ApplicationsPage() {
       {/* Applications Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Applications List ({pagination.total} total)</CardTitle>
+          <CardTitle>Daftar Lamaran ({pagination.total} total)</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">Loading...</div>
+            <div className="text-center py-8">Memuat...</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Applicant</TableHead>
-                  <TableHead>Vacancy</TableHead>
+                  <TableHead>Pelamar</TableHead>
+                  <TableHead>Lowongan</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Quiz Score</TableHead>
-                  <TableHead>Applied</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Skor Tes</TableHead>
+                  <TableHead>Peringkat AI</TableHead>
+                  <TableHead>Tanggal Daftar</TableHead>
+                  <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredApplications.map((application) => (
+                {sortedApplications.map((application, idx) => (
                   <TableRow key={application.id}>
                     <TableCell>
                       <div>
@@ -500,7 +508,14 @@ export default function ApplicationsPage() {
                           </div>
                         </div>
                       ) : (
-                        <span className="text-gray-400">Not completed</span>
+                        <span className="text-gray-400">Belum selesai</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {typeof application.aiRecommendationScore === "number" ? (
+                        `#${idx + 1}`
+                      ) : (
+                        <span className="text-gray-400">-</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -515,7 +530,7 @@ export default function ApplicationsPage() {
                         onClick={() => fetchApplicationDetails(application.id)}
                       >
                         <Eye className="h-4 w-4 mr-1" />
-                        View Details
+                        Lihat Detail
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -527,9 +542,9 @@ export default function ApplicationsPage() {
           {/* Pagination */}
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-gray-600">
-              Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+              Menampilkan {(pagination.page - 1) * pagination.limit + 1} hingga{" "}
               {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
-              of {pagination.total} results
+              dari {pagination.total} hasil
             </div>
             <div className="flex gap-2">
               <Button
@@ -540,7 +555,7 @@ export default function ApplicationsPage() {
                 }
                 disabled={pagination.page <= 1}
               >
-                Previous
+                Sebelumnya
               </Button>
               <Button
                 variant="outline"
@@ -550,7 +565,7 @@ export default function ApplicationsPage() {
                 }
                 disabled={pagination.page >= pagination.totalPages}
               >
-                Next
+                Selanjutnya
               </Button>
             </div>
           </div>
@@ -561,9 +576,9 @@ export default function ApplicationsPage() {
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Application Details</DialogTitle>
+            <DialogTitle>Detail Lamaran</DialogTitle>
             <DialogDescription>
-              Complete application information and quiz results
+              Informasi lengkap tentang lamaran dan hasil tes
             </DialogDescription>
           </DialogHeader>
 
@@ -573,14 +588,12 @@ export default function ApplicationsPage() {
               <div className="grid grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">
-                      Applicant Information
-                    </CardTitle>
+                    <CardTitle className="text-lg">Informasi Pelamar</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
                       <div>
-                        <strong>Name:</strong>{" "}
+                        <strong>Nama:</strong>{" "}
                         {selectedApplication.applicant.name}
                       </div>
                       <div>
@@ -588,15 +601,15 @@ export default function ApplicationsPage() {
                         {selectedApplication.applicant.email}
                       </div>
                       <div>
-                        <strong>Phone:</strong>{" "}
+                        <strong>Telepon:</strong>{" "}
                         {selectedApplication.applicant.phoneNumber}
                       </div>
                       <div>
-                        <strong>Company:</strong>{" "}
+                        <strong>Perusahaan:</strong>{" "}
                         {selectedApplication.applicant.company}
                       </div>
                       <div>
-                        <strong>Degree:</strong>{" "}
+                        <strong>Gelombang:</strong>{" "}
                         {selectedApplication.applicant.degree}
                       </div>
                       <div>
@@ -609,20 +622,20 @@ export default function ApplicationsPage() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Application Info</CardTitle>
+                    <CardTitle className="text-lg">Info Lamaran</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
                       <div>
-                        <strong>Vacancy:</strong>{" "}
+                        <strong>Lowongan:</strong>{" "}
                         {selectedApplication.vacancy.title}
                       </div>
                       <div>
-                        <strong>Location:</strong>{" "}
+                        <strong>Lokasi:</strong>{" "}
                         {selectedApplication.vacancy.location}
                       </div>
                       <div>
-                        <strong>Applied:</strong>{" "}
+                        <strong>Tanggal Daftar:</strong>{" "}
                         {new Date(
                           selectedApplication.application.createdAt
                         ).toLocaleDateString()}
@@ -658,7 +671,7 @@ export default function ApplicationsPage() {
                               rel="noopener noreferrer"
                             >
                               <Download className="h-4 w-4 mr-1" />
-                              Portfolio
+                              Portofolio
                             </a>
                           </Button>
                         )}
@@ -671,7 +684,7 @@ export default function ApplicationsPage() {
               {/* Quiz Results */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Quiz Results</CardTitle>
+                  <CardTitle className="text-lg">Hasil Tes</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {selectedApplication.quiz.hasAnswered ? (
@@ -682,7 +695,7 @@ export default function ApplicationsPage() {
                             {selectedApplication.quiz.totalQuestions}
                           </div>
                           <div className="text-sm text-gray-600">
-                            Total Questions
+                            Total Pertanyaan
                           </div>
                         </div>
                         <div>
@@ -690,7 +703,7 @@ export default function ApplicationsPage() {
                             {selectedApplication.quiz.correctAnswers}
                           </div>
                           <div className="text-sm text-gray-600">
-                            Correct Answers
+                            Jawaban Benar
                           </div>
                         </div>
                         <div>
@@ -702,20 +715,20 @@ export default function ApplicationsPage() {
                             {selectedApplication.quiz.score}%
                           </div>
                           <div className="text-sm text-gray-600">
-                            Final Score
+                            Skor Akhir
                           </div>
                         </div>
                         <div>
                           <div className="text-2xl font-bold text-purple-600">
                             {selectedApplication.quiz.answeredQuestions}
                           </div>
-                          <div className="text-sm text-gray-600">Answered</div>
+                          <div className="text-sm text-gray-600">Terjawab</div>
                         </div>
                       </div>
 
                       {/* Quiz Details */}
                       <div className="mt-6">
-                        <h4 className="font-medium mb-3">Answer Details:</h4>
+                        <h4 className="font-medium mb-3">Detail Jawaban:</h4>
                         <div className="space-y-3">
                           {selectedApplication.quiz.details.map(
                             (detail, index) => (
@@ -729,7 +742,7 @@ export default function ApplicationsPage() {
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                   <div>
                                     <span className="text-gray-600">
-                                      Selected:
+                                      Dipilih:
                                     </span>
                                     <span
                                       className={`ml-2 ${
@@ -743,7 +756,7 @@ export default function ApplicationsPage() {
                                   </div>
                                   <div>
                                     <span className="text-gray-600">
-                                      Correct Answer:
+                                      Jawaban Benar:
                                     </span>
                                     <span className="ml-2 text-green-600">
                                       {detail.correctAnswer}
@@ -758,7 +771,7 @@ export default function ApplicationsPage() {
                     </div>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
-                      Quiz has not been completed yet
+                      Tes belum diselesaikan
                     </div>
                   )}
                 </CardContent>
@@ -775,7 +788,7 @@ export default function ApplicationsPage() {
                     setIsStatusModalOpen(true);
                   }}
                 >
-                  Update Status
+                  Perbarui Status
                 </Button>
               </div>
             </div>
@@ -787,9 +800,9 @@ export default function ApplicationsPage() {
       <Dialog open={isStatusModalOpen} onOpenChange={setIsStatusModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Update Application Status</DialogTitle>
+            <DialogTitle>Perbarui Status Lamaran</DialogTitle>
             <DialogDescription>
-              Change the status of this application and optionally add a reason
+              Ubah status lamaran ini dan tambahkan alasan jika perlu
             </DialogDescription>
           </DialogHeader>
 
@@ -803,22 +816,22 @@ export default function ApplicationsPage() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder="Pilih status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="REVIEWED">Reviewed</SelectItem>
-                  <SelectItem value="ACCEPTED">Accepted</SelectItem>
-                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value="PENDING">Menunggu</SelectItem>
+                  <SelectItem value="REVIEWED">Sudah Ditinjau</SelectItem>
+                  <SelectItem value="ACCEPTED">Diterima</SelectItem>
+                  <SelectItem value="REJECTED">Ditolak</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="reason">Reason (Optional)</Label>
+              <Label htmlFor="reason">Alasan (Opsional)</Label>
               <Textarea
                 id="reason"
-                placeholder="Add a reason for this status change..."
+                placeholder="Tambahkan alasan untuk perubahan status ini..."
                 value={statusUpdate.reason}
                 onChange={(e) =>
                   setStatusUpdate((prev) => ({
@@ -835,9 +848,9 @@ export default function ApplicationsPage() {
               variant="outline"
               onClick={() => setIsStatusModalOpen(false)}
             >
-              Cancel
+              Batal
             </Button>
-            <Button onClick={handleStatusUpdate}>Update Status</Button>
+            <Button onClick={handleStatusUpdate}>Perbarui Status</Button>
           </div>
         </DialogContent>
       </Dialog>

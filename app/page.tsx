@@ -47,25 +47,34 @@ interface Vacancy {
 export default function Home() {
   const [searchTitle, setSearchTitle] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
-  const [checkingVacancyId, setCheckingVacancyId] = useState<number | null>(null);
+  const [checkingVacancyId, setCheckingVacancyId] = useState<number | null>(
+    null
+  );
 
   const router = useRouter();
   const user = useStore((state) => state.user);
 
   // Hook untuk mengambil daftar lowongan
-  const { data: vacancies, isLoading: isLoadingVacancies, request: fetchVacanciesApi } = useApi<Vacancy[]>();
-  
+  const {
+    data: vacancies,
+    isLoading: isLoadingVacancies,
+    request: fetchVacanciesApi,
+  } = useApi<Vacancy[]>();
+
   // Hook untuk memeriksa status lamaran
   const { isLoading: isCheckingStatus, request: checkStatusApi } = useApi();
 
   // Fungsi untuk mengambil lowongan dengan filter
-  const fetchVacancies = useCallback((filters = {}) => {
-    fetchVacanciesApi({
-      method: 'POST',
-      url: '/api/vacancy/list',
-      data: filters,
-    });
-  }, [fetchVacanciesApi]);
+  const fetchVacancies = useCallback(
+    (filters = {}) => {
+      fetchVacanciesApi({
+        method: "POST",
+        url: "/api/vacancy/list",
+        data: filters,
+      });
+    },
+    [fetchVacanciesApi]
+  );
 
   // Mengambil data lowongan saat komponen pertama kali dimuat
   useEffect(() => {
@@ -88,26 +97,30 @@ export default function Home() {
 
     setCheckingVacancyId(vacancyId);
 
-    await checkStatusApi({
-      method: 'GET',
-      url: `/api/application/status?vacancyId=${vacancyId}`,
-    }, {
-      showToastOnError: true, // Tampilkan toast jika ada error
-      onSuccess: (data) => {
-        const { status, applicationId } = data as any;
-        if (status === "PENDING_TEST") {
-          toast.info("Anda sudah melamar, mengarahkan ke halaman tes.");
-          router.push(`/application/test?id=${applicationId}`);
-        } else if (status === "COMPLETED") {
-          toast.success("Anda sudah menyelesaikan tes untuk lowongan ini.");
-        } else { // NOT_APPLIED
-          router.push(`/application?vacancy=${vacancyId}`);
-        }
+    await checkStatusApi(
+      {
+        method: "GET",
+        url: `/api/application/status?vacancyId=${vacancyId}`,
       },
-      onError: () => {
-        // Toast error sudah ditangani oleh hook, bisa tambahkan logic lain jika perlu
+      {
+        showToastOnError: true, // Tampilkan toast jika ada error
+        onSuccess: (data) => {
+          const { status, applicationId } = data as any;
+          if (status === "PENDING_TEST") {
+            toast.info("Anda sudah melamar, mengarahkan ke halaman tes.");
+            router.push(`/application/test?id=${applicationId}`);
+          } else if (status === "COMPLETED") {
+            toast.success("Anda sudah menyelesaikan tes untuk lowongan ini.");
+          } else {
+            // NOT_APPLIED
+            router.push(`/application?vacancy=${vacancyId}`);
+          }
+        },
+        onError: () => {
+          // Toast error sudah ditangani oleh hook, bisa tambahkan logic lain jika perlu
+        },
       }
-    });
+    );
 
     setCheckingVacancyId(null);
   };
@@ -133,13 +146,11 @@ export default function Home() {
                 <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">
                   Program Magang 2025
                 </div>
-                <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-                  Program Magang PT Mada Wikri Tunggal
+                <h1 className="text-4xl font-bold mb-4">
+                  Selamat Datang di Website Magang PT Mada Wikri Tunggal
                 </h1>
-                <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Kembangkan karir dan keterampilan Anda melalui program magang
-                  selama 6 bulan di PT Mada Wikri Tunggal. Terbuka untuk
-                  mahasiswa baru dan berpengalaman.
+                <p className="text-lg text-muted-foreground mb-8">
+                  Temukan dan daftar program magang sesuai minat dan keahlianmu.
                 </p>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button
@@ -187,7 +198,7 @@ export default function Home() {
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Cari berdasarkan posisi..."
+                  placeholder="Cari berdasarkan judul..."
                   value={searchTitle}
                   onChange={(e) => setSearchTitle(e.target.value)}
                   className="pl-10"
@@ -276,7 +287,9 @@ export default function Home() {
                       <Button
                         className="w-full group-hover:bg-primary/90 transition-colors gap-2"
                         onClick={() => handleApplyClick(vacancy.id)}
-                        disabled={isCheckingStatus && checkingVacancyId === vacancy.id}
+                        disabled={
+                          isCheckingStatus && checkingVacancyId === vacancy.id
+                        }
                       >
                         <Users className="h-4 w-4" />
                         {isCheckingStatus && checkingVacancyId === vacancy.id

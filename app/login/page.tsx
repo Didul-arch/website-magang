@@ -95,7 +95,7 @@ export default function LoginPage() {
         <div className="flex justify-center">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle>Login</CardTitle>
+              <CardTitle>Masuk</CardTitle>
               <CardDescription>
                 Masuk ke akun program magang PT Mada Wikri Tunggal
               </CardDescription>
@@ -141,7 +141,7 @@ export default function LoginPage() {
                     )}
                   />
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Logging in..." : "Login"}
+                    {isLoading ? "Memproses..." : "Masuk"}
                   </Button>
                 </form>
               </Form>

@@ -292,7 +292,7 @@ export default function AdminPositionsPage() {
                     onClick={handlePrevPage}
                     disabled={page === 1}
                   >
-                    Prev
+                    Sebelumnya
                   </Button>
                   <span className="text-sm text-muted-foreground">
                     Halaman {page} dari {maxPage}
@@ -303,7 +303,7 @@ export default function AdminPositionsPage() {
                     onClick={handleNextPage}
                     disabled={page >= maxPage}
                   >
-                    Next
+                    Berikutnya
                   </Button>
                 </div>
               </>

@@ -191,7 +191,7 @@ function TestPage() {
     <div className="container mx-auto p-6 max-w-2xl">
       <Card>
         <CardHeader>
-          <CardTitle>{vacancyTitle || "Internship Test"}</CardTitle>
+          <CardTitle>{vacancyTitle || "Tes Online Magang"}</CardTitle>
         </CardHeader>
         <CardContent>
           {testStatus === "COMPLETED" ? (
@@ -208,25 +208,27 @@ function TestPage() {
           ) : !sopConfirmed ? (
             <div className="py-8 text-center">
               <h2 className="text-xl font-bold mb-4">
-                Standard Operating Procedure (SOP)
+                Standar Operasional Prosedur (SOP) Tes Online
               </h2>
               <div className="text-left mx-auto max-w-2xl space-y-4 mb-6 bg-muted p-4 rounded-lg">
                 <p>
-                  1. Please ensure you have a stable internet connection before
-                  starting.
-                </p>
-                <p>2. Once you begin, you cannot pause or restart the test.</p>
-                <p>
-                  3. Do not open other browser tabs or applications, as this may
-                  invalidate your session.
+                  1. Pastikan koneksi internet Anda stabil sebelum memulai tes.
                 </p>
                 <p>
-                  4. Your final score will not be displayed. We will contact you
-                  regarding the results.
+                  2. Setelah tes dimulai, Anda tidak dapat menjeda atau
+                  mengulang tes.
+                </p>
+                <p>
+                  3. Jangan membuka tab atau aplikasi lain selama tes
+                  berlangsung, karena dapat menyebabkan sesi Anda dibatalkan.
+                </p>
+                <p>
+                  4. Skor akhir tidak akan ditampilkan. Hasil akan
+                  diinformasikan melalui email.
                 </p>
               </div>
               <Button onClick={() => setShowConfirmDialog(true)}>
-                I Understand, Start the Test
+                Saya Mengerti, Mulai Tes
               </Button>
             </div>
           ) : questions.length === 0 ? (
@@ -266,7 +268,7 @@ function TestPage() {
                 </div>
               ))}
               <Button type="submit" disabled={submitting} className="w-full">
-                {submitting ? "Submitting..." : "Submit Answers"}
+                {submitting ? "Mengirim..." : "Kirim Jawaban"}
               </Button>
             </form>
           )}
@@ -276,21 +278,23 @@ function TestPage() {
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you ready to begin?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Apakah Anda yakin ingin memulai tes?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              The test will start immediately after you continue. Make sure you
-              are prepared.
+              Tes akan dimulai segera setelah Anda melanjutkan. Pastikan Anda
+              sudah siap.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 setSopConfirmed(true);
                 setShowConfirmDialog(false);
               }}
             >
-              Continue
+              Mulai Tes
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
