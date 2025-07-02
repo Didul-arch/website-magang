@@ -175,8 +175,13 @@ function ApplicationComponent() {
     }
   }, [vacancyId, fetchVacancy]);
 
+  useEffect(() => {
+    console.log("showSopModal state:", showSopModal);
+  }, [showSopModal]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("handleSubmit called");
     if (isSubmitting || !user?.internship?.id || !vacancyId) return;
 
     if (!cvFile || !portoLink) {
@@ -187,6 +192,7 @@ function ApplicationComponent() {
     // Tampilkan modal SOP sebelum submit
     setPendingSubmit(e);
     setShowSopModal(true);
+    console.log("setShowSopModal(true) dipanggil");
   };
 
   // Fungsi untuk submit form setelah setuju SOP
@@ -309,57 +315,61 @@ function ApplicationComponent() {
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium">
-                    Upload CV (PDF)
-                  </label>
-                  <Input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => setCvFile(e.target.files?.[0] || null)}
-                    disabled={isLoadingVacancy || isSubmitting}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium">
-                    Link Portofolio
-                  </label>
-                  <Input
-                    type="url"
-                    placeholder="https://website-portofolio.com"
-                    value={portoLink}
-                    onChange={(e) => setPortoLink(e.target.value)}
-                    disabled={isLoadingVacancy || isSubmitting}
-                    required
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    Masukkan link website portofolio Anda.
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium">
-                    Alasan Melamar
-                  </label>
-                  <Textarea
-                    value={alasan}
-                    onChange={(e) => setAlasan(e.target.value)}
-                    disabled={isLoadingVacancy || isSubmitting}
-                    required
-                    placeholder="Ceritakan motivasi Anda..."
-                  />
-                </div>
-                <CardFooter className="p-0 pt-2">
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoadingVacancy || isSubmitting}
-                  >
-                    {isSubmitting ? "Mengirim..." : "Kirim Lamaran"}
-                  </Button>
-                </CardFooter>
-              </form>
+              <>
+                {console.log("Form rendered")}
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Upload CV (PDF)
+                    </label>
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setCvFile(e.target.files?.[0] || null)}
+                      disabled={isLoadingVacancy || isSubmitting}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Link Portofolio
+                    </label>
+                    <Input
+                      type="url"
+                      placeholder="https://website-portofolio.com"
+                      value={portoLink}
+                      onChange={(e) => setPortoLink(e.target.value)}
+                      disabled={isLoadingVacancy || isSubmitting}
+                      required
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      Masukkan link website portofolio Anda.
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Alasan Melamar
+                    </label>
+                    <Textarea
+                      value={alasan}
+                      onChange={(e) => setAlasan(e.target.value)}
+                      disabled={isLoadingVacancy || isSubmitting}
+                      required
+                      placeholder="Ceritakan motivasi Anda..."
+                    />
+                  </div>
+                  <CardFooter className="p-0 pt-2">
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isLoadingVacancy || isSubmitting}
+                      onClick={() => console.log("Button clicked")}
+                    >
+                      {isSubmitting ? "Mengirim..." : "Kirim Lamaran"}
+                    </Button>
+                  </CardFooter>
+                </form>
+              </>
             )}
           </CardContent>
         </Card>

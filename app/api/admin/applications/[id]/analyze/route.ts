@@ -11,8 +11,8 @@ const openai = new OpenAI({
 
 // Define the expected JSON structure from OpenAI
 interface AnalysisResult {
-  cv_match_analysis: string;
-  reason_match_analysis: string;
+  cv_score: number; // Numeric score for CV relevance to the job description (0-100)
+  reason_score: number; // Numeric score for reason/motivation relevance (0-100)
   overall_recommendation: "RECOMMENDED" | "NOT_RECOMMENDED";
   recommendation_reason: string;
 }
@@ -64,15 +64,22 @@ export async function POST(
     try {
       const response = await fetch(cvUrl);
       if (!response.ok) {
+        console.error(
+          `Failed to fetch CV: ${response.status} ${response.statusText}`
+        );
         throw new Error(`Failed to fetch CV: ${response.statusText}`);
       }
       const buffer = await response.arrayBuffer();
       const data = await pdf(Buffer.from(buffer));
       cvText = data.text;
+      if (!cvText || cvText.trim().length < 50) {
+        console.error("CV text is too short or empty after parsing.");
+        throw new Error("CV text is too short or empty after parsing.");
+      }
     } catch (error) {
       console.error("Error parsing CV:", error);
       return NextResponse.json(
-        { message: "Failed to read or parse CV file." },
+        { message: "Failed to read or parse CV file.", error: String(error) },
         { status: 500 }
       );
     }
@@ -97,30 +104,37 @@ export async function POST(
 
       The JSON format you must produce is as follows:
       {
-        "cv_match_analysis": "A brief analysis of how well the CV content matches the required qualifications. Explain key matching or non-matching points.",
-        "reason_match_analysis": "A brief analysis of how relevant and convincing the candidate's reason for applying is.",
-        "overall_recommendation": "RECOMMENDED | NOT_RECOMMENDED",
-        "recommendation_reason": "Briefly explain the main reason behind your recommendation (e.g., 'Candidate has strong experience in X and shows high motivation', or 'Candidate's qualifications do not align with the main requirements of the job description')."
+        "cv_score": 0-100, // Numeric score for CV relevance to the job description (0-100)
+        "reason_score": 0-100, // Numeric score for reason/motivation relevance (0-100)
+        "overall_recommendation": "RECOMMENDED" | "NOT_RECOMMENDED",
+        "recommendation_reason": "Briefly explain the main reason behind your recommendation."
       }
+      Please be objective and strict in your scoring. Use the full range (0-100) and do not be too generous.
     `;
 
     // 5. Call the OpenAI API
     if (!process.env.OPENAI_API_KEY) {
+      console.error("OpenAI API key is not configured on the server.");
       return NextResponse.json(
         { message: "OpenAI API key is not configured on the server." },
         { status: 500 }
       );
     }
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-turbo",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-    });
-
-    const analysisResult = JSON.parse(
-      response.choices[0].message.content || "{}"
-    );
+    let analysisResult;
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+      analysisResult = JSON.parse(response.choices[0].message.content || "{}");
+    } catch (error) {
+      console.error("Error from OpenAI API:", error);
+      return NextResponse.json(
+        { message: "Error from OpenAI API", error: String(error) },
+        { status: 500 }
+      );
+    }
 
     // 6. Send the result back to the client
     return NextResponse.json(analysisResult);

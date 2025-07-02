@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   FileText,
@@ -98,7 +104,7 @@ export default function MyApplicationsPage() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch applications");
+        throw new Error("Gagal memuat lamaran");
       }
 
       const data = await response.json();
@@ -107,7 +113,7 @@ export default function MyApplicationsPage() {
       console.error("Error fetching applications:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch your applications",
+        description: "Gagal memuat lamaran Anda",
         variant: "destructive",
       });
     } finally {
@@ -122,7 +128,7 @@ export default function MyApplicationsPage() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch quiz questions");
+        throw new Error("Gagal memuat pertanyaan kuis");
       }
 
       const data = await response.json();
@@ -133,8 +139,9 @@ export default function MyApplicationsPage() {
         data.data.questions.length === 0
       ) {
         toast({
-          title: "No Questions",
-          description: "No quiz questions are available for this application",
+          title: "Tidak Ada Pertanyaan",
+          description:
+            "Tidak ada pertanyaan kuis yang tersedia untuk lamaran ini",
           variant: "destructive",
         });
         return;
@@ -143,8 +150,8 @@ export default function MyApplicationsPage() {
       // Check if already answered
       if (data.data.hasAnswered) {
         toast({
-          title: "Quiz Already Completed",
-          description: `You have already completed this quiz. Your score: ${data.data.score}%`,
+          title: "Kuis Sudah Diselesaikan",
+          description: `Anda sudah menyelesaikan kuis ini. Skor Anda: ${data.data.score}%`,
           variant: "destructive",
         });
         return;
@@ -164,7 +171,7 @@ export default function MyApplicationsPage() {
       console.error("Error fetching quiz:", error);
       toast({
         title: "Error",
-        description: "Failed to start quiz",
+        description: "Gagal memulai kuis",
         variant: "destructive",
       });
     }
@@ -201,8 +208,8 @@ export default function MyApplicationsPage() {
 
     if (unansweredQuestions.length > 0) {
       toast({
-        title: "Incomplete Quiz",
-        description: `Please answer all questions. ${unansweredQuestions.length} questions remaining.`,
+        title: "Kuis Belum Lengkap",
+        description: `Silakan jawab semua pertanyaan. Tersisa ${unansweredQuestions.length} pertanyaan.`,
         variant: "destructive",
       });
       return;
@@ -231,14 +238,14 @@ export default function MyApplicationsPage() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to submit quiz");
+        throw new Error("Gagal mengirim kuis");
       }
 
       const result = await response.json();
 
       toast({
-        title: "Quiz Submitted",
-        description: `Your quiz has been submitted successfully! Score: ${result.data.score}%`,
+        title: "Kuis Dikirim",
+        description: `Kuis Anda telah berhasil dikirim! Skor: ${result.data.score}%`,
       });
 
       setIsQuizModalOpen(false);
@@ -252,7 +259,7 @@ export default function MyApplicationsPage() {
       console.error("Error submitting quiz:", error);
       toast({
         title: "Error",
-        description: "Failed to submit quiz",
+        description: "Gagal mengirim kuis",
         variant: "destructive",
       });
     } finally {
@@ -302,9 +309,9 @@ export default function MyApplicationsPage() {
         <Header />
         <div className="container mx-auto p-6">
           <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">My Applications</h1>
+            <h1 className="text-2xl font-bold mb-4">Lamaran Saya</h1>
             <p className="text-gray-600">
-              Please log in to view your applications.
+              Silakan masuk untuk melihat lamaran Anda.
             </p>
           </div>
         </div>
@@ -320,7 +327,7 @@ export default function MyApplicationsPage() {
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading your applications...</p>
+              <p className="mt-4 text-gray-600">Memuat lamaran Anda...</p>
             </div>
           </div>
         </div>
@@ -334,15 +341,15 @@ export default function MyApplicationsPage() {
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold">My Applications</h1>
+            <h1 className="text-3xl font-bold">Daftar Lamaran Saya</h1>
             <p className="text-gray-600 mt-2">
-              View and manage your internship applications
+              Berikut adalah riwayat lamaran magang yang pernah Anda ajukan.
             </p>
           </div>
           <Button asChild>
             <Link href="/">
               <Briefcase className="h-4 w-4 mr-2" />
-              Browse Internships
+              Telusuri Magang
             </Link>
           </Button>
         </div>
@@ -354,7 +361,7 @@ export default function MyApplicationsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
-                    Total Applications
+                    Total Lamaran
                   </p>
                   <p className="text-2xl font-bold">{applications.length}</p>
                 </div>
@@ -367,7 +374,7 @@ export default function MyApplicationsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Pending</p>
+                  <p className="text-sm font-medium text-gray-600">Menunggu</p>
                   <p className="text-2xl font-bold text-yellow-600">
                     {
                       applications.filter(
@@ -385,7 +392,7 @@ export default function MyApplicationsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Accepted</p>
+                  <p className="text-sm font-medium text-gray-600">Diterima</p>
                   <p className="text-2xl font-bold text-green-600">
                     {
                       applications.filter(
@@ -404,7 +411,7 @@ export default function MyApplicationsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
-                    Completed Quizzes
+                    Kuis Diselesaikan
                   </p>
                   <p className="text-2xl font-bold text-purple-600">
                     {applications.filter((app) => app.quiz.hasAnswered).length}
@@ -419,19 +426,22 @@ export default function MyApplicationsPage() {
         {/* Applications List */}
         <Card>
           <CardHeader>
-            <CardTitle>Your Applications</CardTitle>
+            <CardTitle>Daftar Lamaran Saya</CardTitle>
+            <CardDescription>
+              Berikut adalah riwayat lamaran magang yang pernah Anda ajukan.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {applications.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Location</TableHead>
+                    <TableHead>Posisi</TableHead>
+                    <TableHead>Lokasi</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Quiz Status</TableHead>
-                    <TableHead>Applied Date</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Skor Tes</TableHead>
+                    <TableHead>Tanggal Daftar</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -456,7 +466,7 @@ export default function MyApplicationsPage() {
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary">
                               <Award className="h-3 w-3 mr-1" />
-                              Completed
+                              Selesai
                             </Badge>
                             <span
                               className={getScoreColor(
@@ -469,15 +479,15 @@ export default function MyApplicationsPage() {
                         ) : (
                           <Badge variant="outline">
                             <Clock className="h-3 w-3 mr-1" />
-                            Pending
+                            Menunggu
                           </Badge>
                         )}
                       </TableCell>
                       <TableCell>
                         {new Date(application.createdAt).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
                           {!application.quiz.hasAnswered && (
                             <Button
                               size="sm"
@@ -489,7 +499,7 @@ export default function MyApplicationsPage() {
                               }
                             >
                               <Play className="h-4 w-4 mr-1" />
-                              Take Quiz
+                              Mulai Kuis
                             </Button>
                           )}
                           {application.cv && (
@@ -500,10 +510,17 @@ export default function MyApplicationsPage() {
                                 rel="noopener noreferrer"
                               >
                                 <FileText className="h-4 w-4 mr-1" />
-                                View CV
+                                Lihat CV
                               </a>
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => fetchApplicationDetails(app.id)}
+                          >
+                            Lihat Detail
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -513,14 +530,14 @@ export default function MyApplicationsPage() {
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <Briefcase className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium mb-2">No Applications Yet</p>
+                <p className="text-lg font-medium mb-2">Belum Ada Lamaran</p>
                 <p className="mb-4">
-                  You haven't applied to any internships yet.
+                  Anda belum mengajukan lamaran untuk magang manapun.
                 </p>
                 <Button asChild>
                   <Link href="/">
                     <Briefcase className="h-4 w-4 mr-2" />
-                    Browse Available Internships
+                    Telusuri Magang Tersedia
                   </Link>
                 </Button>
               </div>
@@ -532,10 +549,11 @@ export default function MyApplicationsPage() {
         <Dialog open={isQuizModalOpen} onOpenChange={setIsQuizModalOpen}>
           <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Quiz: {quizSession?.vacancyTitle}</DialogTitle>
+              <DialogTitle>Kuis: {quizSession?.vacancyTitle}</DialogTitle>
               <DialogDescription>
-                Answer all questions to complete your application. Question{" "}
-                {currentQuestionIndex + 1} of {quizSession?.questions.length}
+                Jawablah semua pertanyaan untuk menyelesaikan lamaran Anda.
+                Pertanyaan {currentQuestionIndex + 1} dari{" "}
+                {quizSession?.questions.length}
               </DialogDescription>
             </DialogHeader>
 
@@ -606,15 +624,15 @@ export default function MyApplicationsPage() {
                     onClick={previousQuestion}
                     disabled={currentQuestionIndex === 0}
                   >
-                    Previous
+                    Sebelumnya
                   </Button>
 
                   <div className="flex gap-2">
                     {currentQuestionIndex < quizSession.questions.length - 1 ? (
-                      <Button onClick={nextQuestion}>Next</Button>
+                      <Button onClick={nextQuestion}>Selanjutnya</Button>
                     ) : (
                       <Button onClick={submitQuiz} disabled={isSubmittingQuiz}>
-                        {isSubmittingQuiz ? "Submitting..." : "Submit Quiz"}
+                        {isSubmittingQuiz ? "Mengirim..." : "Kirim Kuis"}
                       </Button>
                     )}
                   </div>
@@ -623,7 +641,7 @@ export default function MyApplicationsPage() {
                 {/* Question Navigation */}
                 <div className="border-t pt-4">
                   <Label className="text-sm font-medium mb-2 block">
-                    Questions:
+                    Pertanyaan:
                   </Label>
                   <div className="flex flex-wrap gap-2">
                     {quizSession.questions.map((_, index) => (
