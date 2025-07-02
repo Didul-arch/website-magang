@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import useApi from "@/hooks/useApi";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,7 +33,21 @@ interface Question {
   }[];
 }
 
-export default function TestPage() {
+export default function Page() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-lg text-muted-foreground">Loading...</div>
+        </div>
+      }
+    >
+      <TestPage />
+    </Suspense>
+  );
+}
+
+function TestPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const applicationId = searchParams.get("id");
