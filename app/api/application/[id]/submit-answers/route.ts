@@ -79,7 +79,7 @@ export async function POST(
     }
 
     // Create applicant answers, update application, and create notification in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Calculate score
       let correctAnswersCount = 0;
       for (const answerData of parsedBody.data.answers) {

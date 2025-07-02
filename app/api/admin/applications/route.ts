@@ -68,10 +68,10 @@ export async function GET(request: Request) {
     ]);
 
     // Calculate quiz scores for each application
-    const applicationsWithScores = applications.map((application) => {
+    const applicationsWithScores = applications.map((application: any) => {
       const totalAnswers = application.ApplicantAnswer.length;
       const correctAnswers = application.ApplicantAnswer.filter(
-        (aa) => aa.answer?.isCorrect
+        (aa: any) => aa.answer?.isCorrect
       ).length;
       const score =
         totalAnswers > 0 ? (correctAnswers / totalAnswers) * 100 : null;
