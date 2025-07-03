@@ -56,7 +56,10 @@ export default function Header() {
   };
 
   const handleLogout = async () => {
-    const result = await logoutUser({ method: "post", url: "/api/auth/logout" });
+    const result = await logoutUser({
+      method: "post",
+      url: "/api/auth/logout",
+    });
     if (result.data) {
       window.location.href = "/";
     }
@@ -109,15 +112,17 @@ export default function Header() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{userData?.name}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {userData?.role === "admin" && (
+                {userData?.role === "ADMIN" && (
                   <DropdownMenuItem onClick={() => router.push("/admin")}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => router.push("/profile")}>
+                <DropdownMenuItem
+                  onClick={() => router.push("/my-applications")}
+                >
                   <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
+                  <span>Lamaran Saya</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
@@ -169,13 +174,17 @@ export default function Header() {
                     </Link>
                   )}
                   <Link
-                    href="/profile"
+                    href="/my-applications"
                     className="text-sm font-medium text-muted-foreground"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    Profile
+                    Lamaran Saya
                   </Link>
-                  <Button variant="ghost" onClick={handleLogout} className="justify-start p-0">
+                  <Button
+                    variant="ghost"
+                    onClick={handleLogout}
+                    className="justify-start p-0"
+                  >
                     Logout
                   </Button>
                 </div>

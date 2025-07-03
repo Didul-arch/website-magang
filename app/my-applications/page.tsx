@@ -85,6 +85,9 @@ export default function MyApplicationsPage() {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const [isSubmittingQuiz, setIsSubmittingQuiz] = useState(false);
+  const [selectedApplicationDetails, setSelectedApplicationDetails] =
+    useState<any>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const { toast } = useToast();
   const user = useStore((state) => state.user);
 
@@ -118,6 +121,29 @@ export default function MyApplicationsPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchApplicationDetails = async (applicationId: number) => {
+    try {
+      const response = await fetch(
+        `/api/admin/application/${applicationId}/results`
+      );
+
+      if (!response.ok) {
+        throw new Error("Gagal memuat detail lamaran");
+      }
+
+      const data = await response.json();
+      setSelectedApplicationDetails(data.data);
+      setIsDetailsModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching application details:", error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat detail lamaran",
+        variant: "destructive",
+      });
     }
   };
 
@@ -517,7 +543,9 @@ export default function MyApplicationsPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => fetchApplicationDetails(app.id)}
+                            onClick={() =>
+                              fetchApplicationDetails(application.id)
+                            }
                           >
                             Lihat Detail
                           </Button>
@@ -663,6 +691,219 @@ export default function MyApplicationsPage() {
                     ))}
                   </div>
                 </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Application Details Modal */}
+        <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+          <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Detail Lamaran</DialogTitle>
+              <DialogDescription>
+                Detail lengkap lamaran dan hasil kuis
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedApplicationDetails && (
+              <div className="space-y-6">
+                {/* Application Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        Informasi Lamaran
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div>
+                        <Label className="text-sm font-medium">Posisi:</Label>
+                        <p className="text-sm">
+                          {selectedApplicationDetails.vacancy?.title}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Lokasi:</Label>
+                        <p className="text-sm">
+                          {selectedApplicationDetails.vacancy?.location}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Status:</Label>
+                        <Badge
+                          className={getStatusColor(
+                            selectedApplicationDetails.application?.status
+                          )}
+                        >
+                          {selectedApplicationDetails.application?.status}
+                        </Badge>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">
+                          Tanggal Daftar:
+                        </Label>
+                        <p className="text-sm">
+                          {new Date(
+                            selectedApplicationDetails.application?.createdAt
+                          ).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Hasil Kuis</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {selectedApplicationDetails.quiz?.hasAnswered ? (
+                        <>
+                          <div>
+                            <Label className="text-sm font-medium">Skor:</Label>
+                            <p
+                              className={`text-lg font-bold ${getScoreColor(
+                                parseFloat(
+                                  selectedApplicationDetails.quiz.score
+                                )
+                              )}`}
+                            >
+                              {selectedApplicationDetails.quiz.score}%
+                            </p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">
+                              Jawaban Benar:
+                            </Label>
+                            <p className="text-sm">
+                              {selectedApplicationDetails.quiz.correctAnswers}{" "}
+                              dari{" "}
+                              {selectedApplicationDetails.quiz.totalQuestions}
+                            </p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">
+                              Status:
+                            </Label>
+                            <Badge variant="secondary">
+                              <Award className="h-3 w-3 mr-1" />
+                              Selesai
+                            </Badge>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-4">
+                          <Clock className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                          <p className="text-sm text-gray-500">
+                            Kuis belum diselesaikan
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Quiz Details */}
+                {selectedApplicationDetails.quiz?.hasAnswered &&
+                  selectedApplicationDetails.quiz?.details && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">
+                          Detail Jawaban Kuis
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {selectedApplicationDetails.quiz.details.map(
+                            (detail: any, index: number) => (
+                              <div
+                                key={detail.questionId}
+                                className="border-b pb-4"
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <Label className="text-sm font-medium">
+                                      {index + 1}. {detail.question}
+                                    </Label>
+                                    <div className="mt-2 space-y-1">
+                                      <div
+                                        className={`text-sm p-2 rounded ${
+                                          detail.isCorrect
+                                            ? "bg-green-50 text-green-800"
+                                            : "bg-red-50 text-red-800"
+                                        }`}
+                                      >
+                                        Jawaban Anda: {detail.selectedAnswer}
+                                      </div>
+                                      {!detail.isCorrect && (
+                                        <div className="text-sm p-2 rounded bg-gray-50 text-gray-700">
+                                          Jawaban Benar: {detail.correctAnswer}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <Badge
+                                    variant={
+                                      detail.isCorrect
+                                        ? "default"
+                                        : "destructive"
+                                    }
+                                  >
+                                    {detail.isCorrect ? (
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                    ) : (
+                                      <XCircle className="h-3 w-3 mr-1" />
+                                    )}
+                                    {detail.isCorrect ? "Benar" : "Salah"}
+                                  </Badge>
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                {/* Files */}
+                {(selectedApplicationDetails.application?.cv ||
+                  selectedApplicationDetails.application?.portfolio) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Dokumen Lamaran</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-4">
+                        {selectedApplicationDetails.application?.cv && (
+                          <Button size="sm" variant="outline" asChild>
+                            <a
+                              href={selectedApplicationDetails.application.cv}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <FileText className="h-4 w-4 mr-1" />
+                              Lihat CV
+                            </a>
+                          </Button>
+                        )}
+                        {selectedApplicationDetails.application?.portfolio && (
+                          <Button size="sm" variant="outline" asChild>
+                            <a
+                              href={
+                                selectedApplicationDetails.application.portfolio
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Briefcase className="h-4 w-4 mr-1" />
+                              Lihat Portfolio
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
           </DialogContent>
