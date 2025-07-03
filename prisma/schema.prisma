@@ -86,6 +86,7 @@ model Application {
   portfolio     String?
   reason        String?
   score         Int?
+  AiScore      Float?        @map(name: "ai_score")
   testSubmittedAt DateTime?
   createdAt     DateTime    @default(now()) @map(name: "created_at")
   updatedAt     DateTime    @updatedAt @map(name: "updated_at")

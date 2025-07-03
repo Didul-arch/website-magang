@@ -169,9 +169,12 @@ export default function Home() {
               </div>
               <div className="flex justify-center">
                 <div className="relative h-[350px] w-[350px] rounded-lg bg-muted overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-90"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <GraduationCap className="h-32 w-32 text-white" />
+                    <img
+                      src="/logo-asli.png"
+                      alt="Company Logo"
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                 </div>
               </div>
