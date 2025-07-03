@@ -30,6 +30,7 @@ import {
   Users,
   Clock,
 } from "lucide-react";
+import Image from "next/image";
 
 interface Vacancy {
   id: number;
@@ -171,7 +172,14 @@ export default function Home() {
                 <div className="relative h-[350px] w-[350px] rounded-lg bg-muted overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-90"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <GraduationCap className="h-32 w-32 text-white" />
+                    <Image
+                      src={"/company.jpg"}
+                      width={128}
+                      height={128}
+                      alt="placeholder"
+                      className="h-full w-full object-cover"
+                    />
+                    {/* <GraduationCap className="h-32 w-32 text-white" /> */}
                   </div>
                 </div>
               </div>

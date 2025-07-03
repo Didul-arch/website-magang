@@ -97,6 +97,7 @@ export async function GET(request: Request) {
               0.5 * aiData.cv_score + 0.1 * aiData.reason_score + 0.4 * score;
           }
         } catch (e) {
+          console.log(e);
           aiScore = null;
         }
 
